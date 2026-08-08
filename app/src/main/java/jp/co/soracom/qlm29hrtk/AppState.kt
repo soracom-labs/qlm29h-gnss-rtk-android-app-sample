@@ -4,6 +4,8 @@ import jp.co.soracom.qlm29hrtk.nmea.ConsoleEntry
 import jp.co.soracom.qlm29hrtk.nmea.GgaFix
 import jp.co.soracom.qlm29hrtk.nmea.NmeaType
 import jp.co.soracom.qlm29hrtk.ntrip.MountPoint
+import jp.co.soracom.qlm29hrtk.ntrip.NtripDefaults
+import jp.co.soracom.qlm29hrtk.location.TrackRetentionPolicy
 import jp.co.soracom.qlm29hrtk.soracom.SoracomQualityPolicy
 import jp.co.soracom.qlm29hrtk.storage.SessionEntity
 import jp.co.soracom.qlm29hrtk.storage.SmartphoneTrackPointEntity
@@ -14,6 +16,11 @@ import jp.co.soracom.qlm29hrtk.usb.UsbSerialDevice
 data class AppDisplayState(
     val darkTheme: Boolean = false,
     val keepScreenOn: Boolean = false,
+)
+
+/** Shared storage policy for QLM and SP points; point counts remain in their owning feature states. */
+data class AppStorageState(
+    val trackPointLimit: Int = TrackRetentionPolicy.DEFAULT_MAX_POINTS,
 )
 
 enum class UsbConnectionState(val label: String) {
@@ -74,9 +81,9 @@ sealed class SourceTableStatus(val label: String) {
 
 /** NTRIP configuration, session status and the resulting RTCM stream. */
 data class AppNtripState(
-    val host: String = "",
-    val port: String = "2101",
-    val mountPoint: String = "AUTO",
+    val host: String = NtripDefaults.HOST,
+    val port: String = NtripDefaults.PORT.toString(),
+    val mountPoint: String = NtripDefaults.MOUNT_POINT,
     val username: String = "",
     val password: String = "",
     val connection: NtripConnectionState = NtripConnectionState.DISCONNECTED,
@@ -105,7 +112,7 @@ enum class SoracomPublicationState(val label: String) {
 /** SORACOM publication configuration, policy and delivery diagnostics. */
 data class AppSoracomState(
     val enabled: Boolean = false,
-    val intervalSeconds: String = "5",
+    val intervalSeconds: String = "60",
     val status: SoracomPublicationState = SoracomPublicationState.DISABLED,
     val lastSentAt: String? = null,
     val lastHttpStatus: Int? = null,
@@ -171,5 +178,6 @@ data class AppState(
     val ntrip: AppNtripState = AppNtripState(),
     val soracom: AppSoracomState = AppSoracomState(),
     val display: AppDisplayState = AppDisplayState(),
+    val storage: AppStorageState = AppStorageState(),
     val smartphone: AppSmartphoneState = AppSmartphoneState(),
 )

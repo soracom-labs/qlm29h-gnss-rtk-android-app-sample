@@ -6,6 +6,16 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class NtripCoreTest {
+    @Test fun soracomGuideDefaultsRequestTheAutoMountPoint() {
+        val config = NtripConfig()
+        val request = NtripRequestBuilder.stream(config).toString(Charsets.US_ASCII)
+
+        assertEquals("qrtksa1.quectel.com", config.host)
+        assertEquals(2101, config.port)
+        assertEquals("AUTO", config.mountPoint)
+        assertTrue(request.startsWith("GET /AUTO HTTP/1.0\r\n"))
+    }
+
     @Test fun acceptsIcyAndHttpSuccess() {
         assertEquals(NtripConnectResult.Success, NtripResponseParser.classify("ICY 200 OK"))
         assertEquals(NtripConnectResult.Success, NtripResponseParser.classify("HTTP/1.1 200 OK"))

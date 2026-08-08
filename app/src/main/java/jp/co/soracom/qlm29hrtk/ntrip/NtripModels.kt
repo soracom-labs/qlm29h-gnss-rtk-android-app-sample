@@ -1,9 +1,16 @@
 package jp.co.soracom.qlm29hrtk.ntrip
 
+/** NTRIP-06: editable defaults matching the SORACOM QLM29H getting-started guide. */
+object NtripDefaults {
+    const val HOST = "qrtksa1.quectel.com"
+    const val PORT = 2101
+    const val MOUNT_POINT = "AUTO"
+}
+
 data class NtripConfig(
-    val host: String,
-    val port: Int = 2101,
-    val mountPoint: String,
+    val host: String = NtripDefaults.HOST,
+    val port: Int = NtripDefaults.PORT,
+    val mountPoint: String = NtripDefaults.MOUNT_POINT,
     val username: String = "",
     val password: String = "",
     val tls: Boolean = false,

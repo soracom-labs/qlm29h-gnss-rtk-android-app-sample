@@ -6,6 +6,18 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AppStateTest {
+    @Test fun ntripDefaultsMatchTheSoracomGuide() {
+        val state = AppNtripState()
+
+        assertEquals("qrtksa1.quectel.com", state.host)
+        assertEquals("2101", state.port)
+        assertEquals("AUTO", state.mountPoint)
+    }
+
+    @Test fun soracomPeriodicPostDefaultsToSixtySeconds() {
+        assertEquals("60", AppSoracomState().intervalSeconds)
+    }
+
     @Test fun usbConnectionStateDefinesRuntimeSemanticsAndDisplayLabels() {
         assertFalse(UsbConnectionState.DISCONNECTED.isActive)
         assertTrue(UsbConnectionState.CONNECTING.isActive)
@@ -45,6 +57,18 @@ class AppStateTest {
         assertFalse(changed.display.darkTheme)
         assertEquals(UsbConnectionState.CONNECTED, changed.usb.connection)
         assertEquals(42, changed.tracking.pointCount)
+    }
+
+    @Test fun storageCopyDoesNotReplaceTrackingOrSmartphoneState() {
+        val initial = AppState(
+            tracking = AppTrackingState(pointCount = 42),
+            smartphone = AppSmartphoneState(pointCount = 24),
+        )
+        val changed = initial.copy(storage = initial.storage.copy(trackPointLimit = 300_000))
+
+        assertEquals(300_000, changed.storage.trackPointLimit)
+        assertEquals(42, changed.tracking.pointCount)
+        assertEquals(24, changed.smartphone.pointCount)
     }
 
     @Test fun usbCopyDoesNotReplaceDisplayOrTrackingState() {

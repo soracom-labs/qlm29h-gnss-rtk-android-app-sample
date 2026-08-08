@@ -55,6 +55,7 @@ data class SoracomSettingsUiState(
 data class TrackStorageUiState(
     val qlmPointCount: Int,
     val smartphonePointCount: Int,
+    val pointLimit: Int,
     val sessionLogCaptureActive: Boolean,
 )
 data class SessionsUiState(val sessions: List<SessionEntity>, val selectedMapSessionId: String?)
@@ -102,6 +103,7 @@ data class SettingsUiState(
             storage = TrackStorageUiState(
                 state.tracking.pointCount,
                 state.smartphone.pointCount,
+                state.storage.trackPointLimit,
                 state.usb.connection == UsbConnectionState.CONNECTED,
             ),
             sessions = SessionsUiState(state.tracking.sessions, state.tracking.selectedSessionId),

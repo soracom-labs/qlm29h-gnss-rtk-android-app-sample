@@ -6,6 +6,7 @@ import jp.co.soracom.qlm29hrtk.AppUsbState
 import jp.co.soracom.qlm29hrtk.AppNtripState
 import jp.co.soracom.qlm29hrtk.AppSoracomState
 import jp.co.soracom.qlm29hrtk.AppSmartphoneState
+import jp.co.soracom.qlm29hrtk.AppStorageState
 import jp.co.soracom.qlm29hrtk.AppTrackingState
 import jp.co.soracom.qlm29hrtk.AppDiagnosticsState
 import jp.co.soracom.qlm29hrtk.UsbConnectionState
@@ -33,6 +34,7 @@ class SettingsUiStateTest {
                 ntrip = AppNtripState(host = "caster.example", connection = NtripConnectionState.RECONNECTING),
                 soracom = AppSoracomState(enabled = true, status = SoracomPublicationState.SUCCESS),
                 tracking = AppTrackingState(pointCount = 34, selectedSessionId = "past-session"),
+                storage = AppStorageState(trackPointLimit = 300_000),
             ),
         )
 
@@ -49,6 +51,7 @@ class SettingsUiStateTest {
         assertTrue(result.soracom.enabled)
         assertEquals("Success", result.soracom.status)
         assertEquals(34, result.storage.qlmPointCount)
+        assertEquals(300_000, result.storage.pointLimit)
         assertEquals("past-session", result.sessions.selectedMapSessionId)
     }
 
