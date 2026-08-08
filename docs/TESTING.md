@@ -26,6 +26,8 @@ Lintのerrorはリリース前に0件とする。依存更新、target SDK、ア
 10. ConsoleのShareから`Share current log`が従来形式を共有し、`Share historical log`がSessionsまでスクロールすることを確認する。
 11. 終了済みSessionの`Share logs`からNMEA `.log`を共有し、QGNSS v2.5 Log Playで読み込めることを確認する。NTRIPを使用した新規セッションではRTCM `.log`も同時共有されることを確認する。
 12. 生ログ導入前のSessionはGGA-onlyと表示され、位置・Fix Qualityを再生できることを確認する。
+13. SORACOM送信間隔は4秒以下を保存できず、5秒以上を保存できることを確認する。
+14. 上書きインストール後、ホーム画面とアプリ一覧に新しいランチャーアイコンが表示されることを確認する。
 
 ## 車載試験
 

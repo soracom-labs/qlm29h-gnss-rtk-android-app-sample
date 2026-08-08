@@ -101,3 +101,15 @@ Consoleは直近10,000件の診断表示、TrackPointはGGAから抽出したMap
 ConsoleのShareは従来のタイムスタンプ付き診断ログを維持する。セッション原本はSettingsのSessionsから選択させ、終了済みセッションだけを共有する。これにより「画面に見えている直近ログ」と「走行セッションの原本」を同じShare操作から選べる一方、形式を曖昧にしない。
 
 関連要件: `DATA-01`, `DATA-05`〜`DATA-07`, `SEC-01`
+
+## DD-16 SORACOM向けNTRIP初期値を入力負担の軽減だけに使う
+
+SORACOMから案内されるQLM29H用CasterはHost、Port、Mount Pointが共通であり、利用者ごとに異なるのは主にUsernameとPasswordである。未設定または旧版で空欄だった場合だけ公式手順の値を補い、保存済みの他Caster設定は上書きしない。Mount PointはUI入力を省略できてもNTRIP要求上は`AUTO`として保持し、Source Tableのルート要求と混同しない。
+
+関連要件: `NTRIP-01`, `NTRIP-06`
+
+## DD-17 SORACOM定期送信の下限を検証と実行の両方で守る
+
+設定保存時の検証だけでは、入力途中の値で稼働中スケジュールが再作成される瞬間を保護できない。UIへ5〜3,600秒を表示し、設定検証で範囲外を拒否したうえで、Schedule PolicyとControllerも実際の待機時間を同じ範囲へ制限する。単発の`Test send latest fix`は定期送信ではないため、この間隔制約の対象外とする。
+
+関連要件: `SORACOM-03`, `SORACOM-05`

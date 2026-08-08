@@ -18,6 +18,7 @@
 - `NTRIP-03`: 一時的なネットワーク障害では再接続し、認証失敗では無限再試行しないこと。
 - `NTRIP-04`: RTCM最終受信から10秒以上経過した状態をStaleとして表示すること。
 - `NTRIP-05`: Smartphone GNSSをNTRIPのGGAとして使用しないこと。
+- `NTRIP-06`: 未設定時はSORACOMのQLM29H手順に合わせ、Host `qrtksa1.quectel.com`、Port `2101`、Mount Point `AUTO`を初期値とし、他Caster向けに編集可能であること。
 
 ## 4. SORACOM Unified Endpoint
 
@@ -25,6 +26,7 @@
 - `SORACOM-02`: 定期送信はQLM測位だけを対象とし、SPを含めないこと。
 - `SORACOM-03`: Disabledでも確認ダイアログを経由して最新Fixのテスト送信ができること。
 - `SORACOM-04`: 失敗ペイロードを永続化・自動再送しないこと。
+- `SORACOM-05`: Unified Endpointへの定期送信間隔は5〜3,600秒とし、入力途中や不正値でも5秒未満で送信しないこと。
 
 ## 5. Smartphone GNSS
 
@@ -56,6 +58,7 @@
 ## 8. 表示・安全性
 
 - `DISPLAY-01`: Dark themeとKeep screen onをDisplay設定へ集約すること。
+- `DISPLAY-02`: 配布APKはQLM29H GNSS/RTK Sample用ランチャーアイコンをAndroid標準密度ごとに備えること。
 - `FGS-01`: USB権限が現在有効な場合だけ`connectedDevice`種別を使用すること。
 - `FGS-02`: 位置情報権限が現在有効な場合だけ`location`種別を使用すること。
 - `FGS-03`: 有効な種別がなければサービスを安全に停止し、例外でアプリを終了させないこと。

@@ -7,11 +7,12 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.first
+import jp.co.soracom.qlm29hrtk.ntrip.NtripDefaults
 
 data class StoredNtripSettings(
-    val host: String = "",
-    val port: Int = 2101,
-    val mountPoint: String = "AUTO",
+    val host: String = NtripDefaults.HOST,
+    val port: Int = NtripDefaults.PORT,
+    val mountPoint: String = NtripDefaults.MOUNT_POINT,
     val soracomEnabled: Boolean = false,
     val soracomIntervalSeconds: Int = 5,
     val darkTheme: Boolean = false,
@@ -38,9 +39,10 @@ class AndroidSettingsRepository(context: Context) : SettingsRepository {
     override suspend fun loadNtrip(): StoredNtripSettings {
         val values = appContext.settingsDataStore.data.first()
         return StoredNtripSettings(
-            host = values[HOST].orEmpty(),
-            port = values[PORT] ?: 2101,
-            mountPoint = values[MOUNT_POINT] ?: "AUTO",
+            // NTRIP-06: repair legacy blank values without replacing a custom caster.
+            host = values[HOST]?.takeIf(String::isNotBlank) ?: NtripDefaults.HOST,
+            port = values[PORT] ?: NtripDefaults.PORT,
+            mountPoint = values[MOUNT_POINT]?.takeIf(String::isNotBlank) ?: NtripDefaults.MOUNT_POINT,
             soracomEnabled = values[SORACOM_ENABLED] ?: false,
             soracomIntervalSeconds = values[SORACOM_INTERVAL] ?: 5,
             darkTheme = values[DARK_THEME] ?: false,

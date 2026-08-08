@@ -4,6 +4,7 @@ import jp.co.soracom.qlm29hrtk.nmea.ConsoleEntry
 import jp.co.soracom.qlm29hrtk.nmea.GgaFix
 import jp.co.soracom.qlm29hrtk.nmea.NmeaType
 import jp.co.soracom.qlm29hrtk.ntrip.MountPoint
+import jp.co.soracom.qlm29hrtk.ntrip.NtripDefaults
 import jp.co.soracom.qlm29hrtk.soracom.SoracomQualityPolicy
 import jp.co.soracom.qlm29hrtk.storage.SessionEntity
 import jp.co.soracom.qlm29hrtk.storage.SmartphoneTrackPointEntity
@@ -74,9 +75,9 @@ sealed class SourceTableStatus(val label: String) {
 
 /** NTRIP configuration, session status and the resulting RTCM stream. */
 data class AppNtripState(
-    val host: String = "",
-    val port: String = "2101",
-    val mountPoint: String = "AUTO",
+    val host: String = NtripDefaults.HOST,
+    val port: String = NtripDefaults.PORT.toString(),
+    val mountPoint: String = NtripDefaults.MOUNT_POINT,
     val username: String = "",
     val password: String = "",
     val connection: NtripConnectionState = NtripConnectionState.DISCONNECTED,

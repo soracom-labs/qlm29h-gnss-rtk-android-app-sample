@@ -33,6 +33,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import jp.co.soracom.qlm29hrtk.soracom.SoracomQualityPolicy
+import jp.co.soracom.qlm29hrtk.soracom.SoracomSchedulePolicy
 import jp.co.soracom.qlm29hrtk.sessionlog.NmeaExportSource
 import jp.co.soracom.qlm29hrtk.sessionlog.SessionLogShare
 import jp.co.soracom.qlm29hrtk.storage.StorageInspector
@@ -297,6 +298,9 @@ private fun SoracomControls(state: SoracomSettingsUiState, actions: SettingsActi
                     value = state.intervalSeconds,
                     onValueChange = actions::updateSoracomInterval,
                     label = { Text("Interval sec") },
+                    supportingText = {
+                        Text("${SoracomSchedulePolicy.MIN_INTERVAL_SECONDS}-${SoracomSchedulePolicy.MAX_INTERVAL_SECONDS} seconds")
+                    },
                     singleLine = true,
                     modifier = Modifier.padding(start = 12.dp).weight(1f),
                 )

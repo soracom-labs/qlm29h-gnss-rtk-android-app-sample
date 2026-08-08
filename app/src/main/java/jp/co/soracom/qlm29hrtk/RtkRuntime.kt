@@ -13,6 +13,7 @@ import jp.co.soracom.qlm29hrtk.ntrip.NtripDataSource
 import jp.co.soracom.qlm29hrtk.ntrip.NtripSessionController
 import jp.co.soracom.qlm29hrtk.ntrip.NtripSessionEvent
 import jp.co.soracom.qlm29hrtk.ntrip.NtripConfig
+import jp.co.soracom.qlm29hrtk.ntrip.NtripDefaults
 import jp.co.soracom.qlm29hrtk.ntrip.RtcmInspector
 import jp.co.soracom.qlm29hrtk.ntrip.MountPoint
 import jp.co.soracom.qlm29hrtk.usb.SerialTransport
@@ -471,7 +472,7 @@ class RtkRuntime(
             NtripConfig(
                 host = snapshot.ntrip.host.trim(),
                 port = snapshot.ntrip.port.toIntOrNull() ?: error("NTRIP port is invalid"),
-                mountPoint = snapshot.ntrip.mountPoint.ifBlank { "AUTO" },
+                mountPoint = snapshot.ntrip.mountPoint.ifBlank { NtripDefaults.MOUNT_POINT },
                 username = snapshot.ntrip.username,
                 password = snapshot.ntrip.password,
                 tls = false,

@@ -11,8 +11,8 @@ class SettingsValidatorTest {
             (SettingsValidator.validate("1", "3600") as SettingsValidationResult.Valid).values,
         )
         assertEquals(
-            ValidatedIntervals(65_535, 1),
-            (SettingsValidator.validate("65535", "1") as SettingsValidationResult.Valid).values,
+            ValidatedIntervals(65_535, 5),
+            (SettingsValidator.validate("65535", "5") as SettingsValidationResult.Valid).values,
         )
     }
 
@@ -23,10 +23,12 @@ class SettingsValidatorTest {
     }
 
     @Test fun rejectsIntervalOutsideDocumentedRange() {
-        val result = SettingsValidator.validate("2101", "3601")
-        assertEquals(
-            "SORACOM interval must be 1-3600 seconds",
-            (result as SettingsValidationResult.Invalid).message,
-        )
+        listOf("4", "3601").forEach { interval ->
+            val result = SettingsValidator.validate("2101", interval)
+            assertEquals(
+                "SORACOM interval must be 5-3600 seconds",
+                (result as SettingsValidationResult.Invalid).message,
+            )
+        }
     }
 }

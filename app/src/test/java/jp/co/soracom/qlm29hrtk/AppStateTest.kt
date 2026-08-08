@@ -6,6 +6,14 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AppStateTest {
+    @Test fun ntripDefaultsMatchTheSoracomGuide() {
+        val state = AppNtripState()
+
+        assertEquals("qrtksa1.quectel.com", state.host)
+        assertEquals("2101", state.port)
+        assertEquals("AUTO", state.mountPoint)
+    }
+
     @Test fun usbConnectionStateDefinesRuntimeSemanticsAndDisplayLabels() {
         assertFalse(UsbConnectionState.DISCONNECTED.isActive)
         assertTrue(UsbConnectionState.CONNECTING.isActive)

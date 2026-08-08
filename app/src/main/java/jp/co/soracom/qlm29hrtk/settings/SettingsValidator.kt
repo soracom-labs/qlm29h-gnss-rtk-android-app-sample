@@ -1,5 +1,7 @@
 package jp.co.soracom.qlm29hrtk.settings
 
+import jp.co.soracom.qlm29hrtk.soracom.SoracomSchedulePolicy
+
 data class ValidatedIntervals(val ntripPort: Int, val soracomIntervalSeconds: Int)
 
 sealed interface SettingsValidationResult {
@@ -15,8 +17,10 @@ object SettingsValidator {
             return SettingsValidationResult.Invalid("NTRIP port is invalid")
         }
         val interval = soracomIntervalSeconds.toIntOrNull()
-        if (interval == null || interval !in 1..3_600) {
-            return SettingsValidationResult.Invalid("SORACOM interval must be 1-3600 seconds")
+        if (interval == null || interval !in SoracomSchedulePolicy.MIN_INTERVAL_SECONDS..SoracomSchedulePolicy.MAX_INTERVAL_SECONDS) {
+            return SettingsValidationResult.Invalid(
+                "SORACOM interval must be ${SoracomSchedulePolicy.MIN_INTERVAL_SECONDS}-${SoracomSchedulePolicy.MAX_INTERVAL_SECONDS} seconds",
+            )
         }
         return SettingsValidationResult.Valid(ValidatedIntervals(port, interval))
     }
