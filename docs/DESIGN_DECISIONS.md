@@ -121,3 +121,19 @@ SORACOMから案内されるQLM29H用CasterはHost、Port、Mount Pointが共通
 この設定はMap表示用に抽出したTrackPointだけを対象とし、外部リプレイの原本であるNMEA/RTCM生ログには適用しない。上限を増やすとストレージ使用量とPast session描画負荷が増えるため、SettingsとREADMEで明示する。
 
 関連要件: `DATA-02`, `DATA-03`, `DATA-05`, `DATA-06`
+
+## DD-19 最下部ナビゲーションを一体型タブとして表す
+
+Map、Console、Settingsは同じ階層の表示先であり、独立したボタンや選択カプセルとして見せるより、画面幅を等分する連続したタブの方が関係を理解しやすい。各タブのタップ領域は隙間なく維持し、選択中だけSORACOM Celesteの全面下線と薄い背景を使う。文字とアイコンは選択状態にかかわらず共通のニュートラル色とし、ブランド色の面と線だけで現在地を識別するSORACOM User Consoleの表現に合わせる。
+
+Light/Dark themeへ固定色を重複定義せず、選択面と下線にはMaterial themeの`primary`、文字とアイコンには`onSurfaceVariant`を使用する。タブの見た目だけを変更し、画面状態や切替処理の所有関係はMainScreenに維持する。
+
+関連要件: `DISPLAY-03`
+
+## DD-20 Settingsの選択肢を枠線と文字ウェイトで表す
+
+FilterChipの選択背景はCard背景との色差が小さく、選択肢が密集すると選択状態を判別しにくい。選択中も背景色を変えず、SORACOM Celesteの2dp枠線と太字だけを使う。未選択は標準の1dp枠線と通常ウェイトとし、選択肢の大きさや配置を変化させない。
+
+この規則はPOST間隔、SORACOM送信品質、Track cache上限などの選択チップへ共通適用する。接続状態を表すSwitch、実行操作のButton、USB機器やMount Pointの一覧選択とは役割が異なるため適用しない。
+
+関連要件: `DISPLAY-04`

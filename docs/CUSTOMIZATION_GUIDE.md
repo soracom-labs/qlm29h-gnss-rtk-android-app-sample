@@ -14,6 +14,8 @@
 - Settingsの表示と確認ダイアログ: `ui/settings/SettingsScreen.kt`
 - 数値設定の許容範囲: `settings/SettingsValidator.kt`と対応テスト
 - テーマ: `ui/theme/Theme.kt`
+- 最下部タブの表示: `MainActivity.AppBottomTabBar`と`drawable/ic_tab_*.xml`。画面切替状態とタップ処理は変更せず、選択面と下線にはテーマの`primary`、文字とアイコンには`onSurfaceVariant`を使用する。
+- Settingsの選択チップ: `SettingsScreen.SettingsChoiceChip`。選択時も背景を変えず、テーマの`primary`による2dp枠と太字だけで強調する。Switchや実行Buttonへ流用しない。
 - 保存上限: `TrackRetentionPolicy`、`TrackRepository`、`SmartphoneTrackRepository`、`SettingsRepository`。選択肢、表示文言、永続化、保持テストを同時更新し、生ログの保持とは分離する。
 - SORACOM payload項目: `soracom/SoracomPayload.kt`。SPを混入させない。
 

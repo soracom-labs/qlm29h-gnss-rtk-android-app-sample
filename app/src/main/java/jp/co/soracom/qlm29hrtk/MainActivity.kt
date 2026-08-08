@@ -14,14 +14,20 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
@@ -38,9 +44,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -52,7 +58,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import jp.co.soracom.qlm29hrtk.usb.UsbPermissionManager
@@ -169,7 +178,11 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private enum class AppTab(val label: String) { MAP("Map"), CONSOLE("Console"), SETTINGS("Settings") }
+private enum class AppTab(val label: String, val iconRes: Int) {
+    MAP("Map", R.drawable.ic_tab_map),
+    CONSOLE("Console", R.drawable.ic_tab_console),
+    SETTINGS("Settings", R.drawable.ic_tab_settings),
+}
 
 @androidx.compose.runtime.Composable
 private fun MainScreen(
@@ -184,16 +197,7 @@ private fun MainScreen(
     var sessionsNavigationRequest by remember { mutableIntStateOf(0) }
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                AppTab.entries.forEach { tab ->
-                    NavigationBarItem(
-                        selected = selected == tab,
-                        onClick = { selected = tab },
-                        icon = { Text(if (selected == tab) "●" else "○") },
-                        label = { Text(tab.label) },
-                    )
-                }
-            }
+            AppBottomTabBar(selected = selected, onSelected = { selected = it })
         },
     ) { padding ->
         Surface(Modifier.fillMaxSize().padding(padding)) {
@@ -222,6 +226,63 @@ private fun MainScreen(
                     onSmartphoneGnssToggle,
                     sessionsNavigationRequest,
                 )
+            }
+        }
+    }
+}
+
+@androidx.compose.runtime.Composable
+private fun AppBottomTabBar(selected: AppTab, onSelected: (AppTab) -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    Surface(color = colors.surface, shadowElevation = 8.dp) {
+        Column(Modifier.navigationBarsPadding()) {
+            HorizontalDivider(color = colors.outlineVariant)
+            Row(Modifier.fillMaxWidth().height(68.dp)) {
+                AppTab.entries.forEach { tab ->
+                    val isSelected = selected == tab
+                    val contentColor = colors.onSurfaceVariant
+
+                    // DISPLAY-03: one continuous tab strip keeps navigation calm; only the
+                    // active destination receives Celeste in its background and underline.
+                    // Labels and icons remain neutral, matching the SORACOM User Console.
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .background(if (isSelected) colors.primary.copy(alpha = 0.09f) else Color.Transparent)
+                            .selectable(
+                                selected = isSelected,
+                                role = Role.Tab,
+                                onClick = { onSelected(tab) },
+                            ),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(2.dp),
+                        ) {
+                            Icon(
+                                painter = painterResource(tab.iconRes),
+                                contentDescription = null,
+                                modifier = Modifier.size(22.dp),
+                                tint = contentColor,
+                            )
+                            Text(
+                                text = tab.label,
+                                color = contentColor,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+                        Box(
+                            Modifier
+                                .align(Alignment.BottomCenter)
+                                .fillMaxWidth()
+                                .height(4.dp)
+                                .background(if (isSelected) colors.primary else Color.Transparent),
+                        )
+                    }
+                }
             }
         }
     }

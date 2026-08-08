@@ -1,5 +1,6 @@
 package jp.co.soracom.qlm29hrtk.ui.settings
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
@@ -32,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import jp.co.soracom.qlm29hrtk.soracom.SoracomQualityPolicy
@@ -326,14 +330,14 @@ private fun SoracomControls(state: SoracomSettingsUiState, actions: SettingsActi
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text("POST interval")
-                androidx.compose.material3.FilterChip(
+                SettingsChoiceChip(
                     selected = state.intervalSeconds.toIntOrNull() == SoracomSchedulePolicy.DEFAULT_INTERVAL_SECONDS,
                     onClick = {
                         if (state.intervalSeconds.toIntOrNull() != SoracomSchedulePolicy.DEFAULT_INTERVAL_SECONDS) {
                             actions.updateSoracomInterval(SoracomSchedulePolicy.DEFAULT_INTERVAL_SECONDS.toString())
                         }
                     },
-                    label = { Text("default 60s") },
+                    label = "default 60s",
                 )
             }
             FlowRow(
@@ -341,7 +345,7 @@ private fun SoracomControls(state: SoracomSettingsUiState, actions: SettingsActi
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 SoracomSchedulePolicy.HIGH_FREQUENCY_INTERVAL_SECONDS.forEach { seconds ->
-                    androidx.compose.material3.FilterChip(
+                    SettingsChoiceChip(
                         selected = state.intervalSeconds.toIntOrNull() == seconds,
                         onClick = {
                             if (state.intervalSeconds.toIntOrNull() != seconds) {
@@ -352,7 +356,7 @@ private fun SoracomControls(state: SoracomSettingsUiState, actions: SettingsActi
                                 }
                             }
                         },
-                        label = { Text("${seconds}s") },
+                        label = "${seconds}s",
                     )
                 }
             }
@@ -364,14 +368,14 @@ private fun SoracomControls(state: SoracomSettingsUiState, actions: SettingsActi
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 SoracomQualityPolicy.entries.forEach { policy ->
-                    androidx.compose.material3.FilterChip(
+                    SettingsChoiceChip(
                         selected = state.qualityPolicy == policy,
                         onClick = { actions.updateSoracomQualityPolicy(policy) },
-                        label = { Text(when (policy) {
+                        label = when (policy) {
                             SoracomQualityPolicy.ALL_VALID -> "All valid"
                             SoracomQualityPolicy.RTK_FLOAT_OR_BETTER -> "Float+"
                             SoracomQualityPolicy.RTK_FIXED_ONLY -> "Fixed only"
-                        }) },
+                        },
                     )
                 }
             }
@@ -451,7 +455,7 @@ private fun TrackControls(state: TrackStorageUiState, actions: SettingsActions) 
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 TrackRetentionPolicy.ALLOWED_MAX_POINTS.forEach { limit ->
-                    androidx.compose.material3.FilterChip(
+                    SettingsChoiceChip(
                         selected = state.pointLimit == limit,
                         onClick = {
                             if (state.pointLimit != limit) {
@@ -459,7 +463,7 @@ private fun TrackControls(state: TrackStorageUiState, actions: SettingsActions) 
                                 else actions.updateTrackPointLimit(limit)
                             }
                         },
-                        label = { Text(formatPointCount(limit)) },
+                        label = formatPointCount(limit),
                     )
                 }
             }
@@ -469,6 +473,35 @@ private fun TrackControls(state: TrackStorageUiState, actions: SettingsActions) 
             )
         }
     }
+}
+
+@Composable
+private fun SettingsChoiceChip(
+    selected: Boolean,
+    onClick: () -> Unit,
+    label: String,
+) {
+    val colors = MaterialTheme.colorScheme
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = {
+            Text(
+                text = label,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+            )
+        },
+        colors = FilterChipDefaults.filterChipColors(
+            containerColor = Color.Transparent,
+            selectedContainerColor = Color.Transparent,
+            labelColor = colors.onSurface,
+            selectedLabelColor = colors.onSurface,
+        ),
+        border = BorderStroke(
+            width = if (selected) 2.dp else 1.dp,
+            color = if (selected) colors.primary else colors.outline,
+        ),
+    )
 }
 
 private fun formatPointCount(value: Int): String = NumberFormat.getIntegerInstance().format(value)
