@@ -59,6 +59,8 @@
 
 - `DISPLAY-01`: Dark themeとKeep screen onをDisplay設定へ集約すること。
 - `DISPLAY-02`: 配布APKはQLM29H GNSS/RTK Sample用ランチャーアイコンをAndroid標準密度ごとに備えること。
+- `DISPLAY-03`: 最下部のMap、Console、Settingsは、隙間のない等幅の一体型タブとして表示すること。選択中のタブだけをSORACOM Celesteの全面下線と薄い背景で強調し、文字とアイコンは選択状態にかかわらず共通のニュートラル色で表示すること。Light/Dark themeの両方で選択状態を識別できること。
+- `DISPLAY-04`: Settings内の選択チップは選択状態によって背景色を変えず、選択中だけ枠線を2dpのSORACOM Celeste、文字を太字にすること。未選択時は標準の1dp枠と通常ウェイトで表示し、Light/Dark themeの両方で判別できること。
 - `FGS-01`: USB権限が現在有効な場合だけ`connectedDevice`種別を使用すること。
 - `FGS-02`: 位置情報権限が現在有効な場合だけ`location`種別を使用すること。
 - `FGS-03`: 有効な種別がなければサービスを安全に停止し、例外でアプリを終了させないこと。

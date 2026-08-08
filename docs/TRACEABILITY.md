@@ -19,6 +19,8 @@
 | `NTRIP-01`〜`NTRIP-04`, `NTRIP-06` | `NtripClient.kt`, `NtripSessionController.kt`, `NtripDefaults`, `RtkRuntime.connectNtrip` | `NtripCoreTest.kt`, `NtripSessionControllerTest.kt`, `AppStateTest.kt` |
 | `SORACOM-01`〜`SORACOM-05` | `SoracomScheduleController.kt`, `SoracomSendPolicy.kt`, `SettingsValidator.kt`, `SoracomIntervalPersistencePolicy.kt`, `RtkRuntime` | `SoracomScheduleControllerTest.kt`, `SoracomSendPolicyTest.kt`, `SoracomSenderTest.kt`, `SettingsValidatorTest.kt`, `SoracomIntervalPersistencePolicyTest.kt` |
 | `DISPLAY-02` | `mipmap-*/ic_launcher.png` | `assembleDebug`, `lintDebug`、実機ランチャー確認 |
+| `DISPLAY-03` | `MainActivity.AppBottomTabBar`, `drawable/ic_tab_*.xml`, `Qlm29hTheme` | `assembleDebug`, `lintDebug`、Light/Dark theme実機タブ切替確認 |
+| `DISPLAY-04` | `SettingsScreen.SettingsChoiceChip`, `Qlm29hTheme` | `assembleDebug`, `lintDebug`、Light/Dark theme実機選択確認 |
 | Settings境界値 | `settings/SettingsValidator.kt` | `SettingsValidatorTest.kt` |
 | UIとRuntimeの境界 | `MapUiState.kt`, `SettingsUiState.kt`, `MapActions`, `SettingsActions`, `RtkSettingsActions` | `MapUiStateTest.kt`, `SettingsUiStateTest.kt`とコンパイル検証 |
 | Runtime部分状態 | `AppState.kt`内の機能別`App*State`と各更新ヘルパー | `AppStateTest.kt`, `RtkRuntimeIntegrationTest.kt`, `MapUiStateTest.kt`, `SettingsUiStateTest.kt` |
