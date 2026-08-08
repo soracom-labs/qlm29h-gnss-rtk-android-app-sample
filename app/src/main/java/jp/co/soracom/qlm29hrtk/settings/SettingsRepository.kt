@@ -8,13 +8,14 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.first
 import jp.co.soracom.qlm29hrtk.ntrip.NtripDefaults
+import jp.co.soracom.qlm29hrtk.soracom.SoracomSchedulePolicy
 
 data class StoredNtripSettings(
     val host: String = NtripDefaults.HOST,
     val port: Int = NtripDefaults.PORT,
     val mountPoint: String = NtripDefaults.MOUNT_POINT,
     val soracomEnabled: Boolean = false,
-    val soracomIntervalSeconds: Int = 5,
+    val soracomIntervalSeconds: Int = SoracomSchedulePolicy.DEFAULT_INTERVAL_SECONDS,
     val darkTheme: Boolean = false,
     val keepScreenOn: Boolean = false,
     val smartphoneGnssEnabled: Boolean = false,
@@ -44,7 +45,11 @@ class AndroidSettingsRepository(context: Context) : SettingsRepository {
             port = values[PORT] ?: NtripDefaults.PORT,
             mountPoint = values[MOUNT_POINT]?.takeIf(String::isNotBlank) ?: NtripDefaults.MOUNT_POINT,
             soracomEnabled = values[SORACOM_ENABLED] ?: false,
-            soracomIntervalSeconds = values[SORACOM_INTERVAL] ?: 5,
+            // SORACOM-05: legacy values predate the cost warning and must be reconfirmed.
+            soracomIntervalSeconds = SoracomIntervalPersistencePolicy.restore(
+                savedSeconds = values[SORACOM_INTERVAL],
+                savedVersion = values[SORACOM_INTERVAL_POLICY_VERSION],
+            ),
             darkTheme = values[DARK_THEME] ?: false,
             keepScreenOn = values[KEEP_SCREEN_ON] ?: false,
             smartphoneGnssEnabled = values[SMARTPHONE_GNSS_ENABLED] ?: false,
@@ -64,6 +69,7 @@ class AndroidSettingsRepository(context: Context) : SettingsRepository {
             values[MOUNT_POINT] = settings.mountPoint
             values[SORACOM_ENABLED] = settings.soracomEnabled
             values[SORACOM_INTERVAL] = settings.soracomIntervalSeconds
+            values[SORACOM_INTERVAL_POLICY_VERSION] = SoracomIntervalPersistencePolicy.VERSION
             values[DARK_THEME] = settings.darkTheme
             values[KEEP_SCREEN_ON] = settings.keepScreenOn
             values[SMARTPHONE_GNSS_ENABLED] = settings.smartphoneGnssEnabled
@@ -82,6 +88,7 @@ class AndroidSettingsRepository(context: Context) : SettingsRepository {
         val MOUNT_POINT = stringPreferencesKey("ntrip_mount_point")
         val SORACOM_ENABLED = booleanPreferencesKey("soracom_enabled")
         val SORACOM_INTERVAL = intPreferencesKey("soracom_interval_seconds")
+        val SORACOM_INTERVAL_POLICY_VERSION = intPreferencesKey("soracom_interval_policy_version")
         val DARK_THEME = booleanPreferencesKey("dark_theme")
         val KEEP_SCREEN_ON = booleanPreferencesKey("keep_screen_on")
         val SMARTPHONE_GNSS_ENABLED = booleanPreferencesKey("smartphone_gnss_enabled")

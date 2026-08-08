@@ -17,9 +17,9 @@ object SettingsValidator {
             return SettingsValidationResult.Invalid("NTRIP port is invalid")
         }
         val interval = soracomIntervalSeconds.toIntOrNull()
-        if (interval == null || interval !in SoracomSchedulePolicy.MIN_INTERVAL_SECONDS..SoracomSchedulePolicy.MAX_INTERVAL_SECONDS) {
+        if (interval == null || !SoracomSchedulePolicy.isAllowedInterval(interval)) {
             return SettingsValidationResult.Invalid(
-                "SORACOM interval must be ${SoracomSchedulePolicy.MIN_INTERVAL_SECONDS}-${SoracomSchedulePolicy.MAX_INTERVAL_SECONDS} seconds",
+                "SORACOM interval must be one of ${SoracomSchedulePolicy.ALLOWED_INTERVAL_SECONDS.joinToString()} seconds",
             )
         }
         return SettingsValidationResult.Valid(ValidatedIntervals(port, interval))

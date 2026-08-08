@@ -283,9 +283,12 @@ class RtkRuntime(
         }
     }
     fun updateSoracomInterval(value: String) {
+        val interval = value.toIntOrNull()?.takeIf(SoracomSchedulePolicy::isAllowedInterval) ?: return
         val current = mutableState.value
-        mutableState.value = current.copy(soracom = current.soracom.copy(intervalSeconds = value.filter(Char::isDigit)), notice = AppNoticeState())
+        // SORACOM-05: this action is called only after the UI confirms a non-default interval.
+        mutableState.value = current.copy(soracom = current.soracom.copy(intervalSeconds = interval.toString()), notice = AppNoticeState())
         if (mutableState.value.soracom.enabled) startSoracomScheduler()
+        saveNtripSettings()
     }
     fun updateDarkTheme(value: Boolean) {
         updateDisplay { copy(darkTheme = value) }

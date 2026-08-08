@@ -106,7 +106,7 @@ enum class SoracomPublicationState(val label: String) {
 /** SORACOM publication configuration, policy and delivery diagnostics. */
 data class AppSoracomState(
     val enabled: Boolean = false,
-    val intervalSeconds: String = "5",
+    val intervalSeconds: String = "60",
     val status: SoracomPublicationState = SoracomPublicationState.DISABLED,
     val lastSentAt: String? = null,
     val lastHttpStatus: Int? = null,

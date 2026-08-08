@@ -17,7 +17,7 @@
 | `DATA-02` | `TrackRepository`, `SmartphoneTrackRepository` | `TrackRetentionPolicyTest.kt` |
 | `DATA-06`, `DATA-07` | `SessionRawLogStore`, `QgnssSessionLogExporter`, `NmeaConsoleCard`, `SessionHistoryCard` | `SessionRawLogStoreTest.kt`, `QgnssSessionLogExporterTest.kt`, `UsbSessionControllerTest.kt`; QGNSS v2.5実機試験 |
 | `NTRIP-01`〜`NTRIP-04`, `NTRIP-06` | `NtripClient.kt`, `NtripSessionController.kt`, `NtripDefaults`, `RtkRuntime.connectNtrip` | `NtripCoreTest.kt`, `NtripSessionControllerTest.kt`, `AppStateTest.kt` |
-| `SORACOM-01`〜`SORACOM-05` | `SoracomScheduleController.kt`, `SoracomSendPolicy.kt`, `SettingsValidator.kt`, `RtkRuntime` | `SoracomScheduleControllerTest.kt`, `SoracomSendPolicyTest.kt`, `SoracomSenderTest.kt`, `SettingsValidatorTest.kt` |
+| `SORACOM-01`〜`SORACOM-05` | `SoracomScheduleController.kt`, `SoracomSendPolicy.kt`, `SettingsValidator.kt`, `SoracomIntervalPersistencePolicy.kt`, `RtkRuntime` | `SoracomScheduleControllerTest.kt`, `SoracomSendPolicyTest.kt`, `SoracomSenderTest.kt`, `SettingsValidatorTest.kt`, `SoracomIntervalPersistencePolicyTest.kt` |
 | `DISPLAY-02` | `mipmap-*/ic_launcher.png` | `assembleDebug`, `lintDebug`、実機ランチャー確認 |
 | Settings境界値 | `settings/SettingsValidator.kt` | `SettingsValidatorTest.kt` |
 | UIとRuntimeの境界 | `MapUiState.kt`, `SettingsUiState.kt`, `MapActions`, `SettingsActions`, `RtkSettingsActions` | `MapUiStateTest.kt`, `SettingsUiStateTest.kt`とコンパイル検証 |

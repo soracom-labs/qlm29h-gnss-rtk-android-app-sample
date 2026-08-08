@@ -5,28 +5,43 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SoracomScheduleControllerTest {
     @Test fun scheduleRequiresEnabledStateAndUsb() {
-        assertNull(SoracomSchedulePolicy.intervalMillis(false, true, "5"))
-        assertNull(SoracomSchedulePolicy.intervalMillis(true, false, "5"))
-        assertEquals(5_000L, SoracomSchedulePolicy.intervalMillis(true, true, "invalid"))
-        assertEquals(5_000L, SoracomSchedulePolicy.intervalMillis(true, true, "4"))
-        assertEquals(3_600_000L, SoracomSchedulePolicy.intervalMillis(true, true, "3600"))
-        assertEquals(3_600_000L, SoracomSchedulePolicy.intervalMillis(true, true, "3601"))
+        assertNull(SoracomSchedulePolicy.intervalMillis(false, true, "60"))
+        assertNull(SoracomSchedulePolicy.intervalMillis(true, false, "60"))
     }
 
-    @Test fun clampsTheActualScheduleToAtLeastFiveSeconds() = runTest {
+    @Test fun acceptsOnlyDocumentedIntervalsAndFallsBackToSixtySeconds() {
+        SoracomSchedulePolicy.ALLOWED_INTERVAL_SECONDS.forEach { seconds ->
+            assertEquals(seconds * 1_000L, SoracomSchedulePolicy.intervalMillis(true, true, seconds.toString()))
+        }
+        listOf("invalid", "2", "4", "7", "61", "3600").forEach { interval ->
+            assertEquals(60_000L, SoracomSchedulePolicy.intervalMillis(true, true, interval))
+        }
+    }
+
+    @Test fun everyNonDefaultChoiceRequiresCostConfirmation() {
+        SoracomSchedulePolicy.ALLOWED_INTERVAL_SECONDS.filterNot { it == 60 }.forEach { seconds ->
+            assertTrue(SoracomSchedulePolicy.requiresCostConfirmation(seconds))
+        }
+        assertFalse(SoracomSchedulePolicy.requiresCostConfirmation(60))
+        assertFalse(SoracomSchedulePolicy.requiresCostConfirmation(4))
+    }
+
+    @Test fun invalidActualScheduleFallsBackToSixtySeconds() = runTest {
         var sends = 0
         val controller = SoracomScheduleController(this)
         controller.start(1_000) { sends++ }
 
         runCurrent()
         assertEquals(1, sends)
-        advanceTimeBy(4_999)
+        advanceTimeBy(59_999)
         runCurrent()
         assertEquals(1, sends)
         advanceTimeBy(1)
@@ -34,7 +49,7 @@ class SoracomScheduleControllerTest {
         assertEquals(2, sends)
 
         controller.stop()
-        advanceTimeBy(10_000)
+        advanceTimeBy(60_000)
         runCurrent()
         assertEquals(2, sends)
     }

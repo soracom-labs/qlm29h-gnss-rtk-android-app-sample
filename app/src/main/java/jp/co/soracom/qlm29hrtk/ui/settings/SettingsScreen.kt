@@ -3,6 +3,8 @@ package jp.co.soracom.qlm29hrtk.ui.settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
@@ -262,9 +264,11 @@ private fun StorageCard(state: TrackStorageUiState) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @androidx.compose.runtime.Composable
 private fun SoracomControls(state: SoracomSettingsUiState, actions: SettingsActions) {
     var confirmTestSend by remember { mutableStateOf(false) }
+    var pendingIntervalSeconds by remember { mutableStateOf<Int?>(null) }
     if (confirmTestSend) {
         AlertDialog(
             onDismissRequest = { confirmTestSend = false },
@@ -277,6 +281,29 @@ private fun SoracomControls(state: SoracomSettingsUiState, actions: SettingsActi
                 }) { Text("Send") }
             },
             dismissButton = { TextButton(onClick = { confirmTestSend = false }) { Text("Cancel") } },
+        )
+    }
+    pendingIntervalSeconds?.let { seconds ->
+        AlertDialog(
+            onDismissRequest = { pendingIntervalSeconds = null },
+            title = { Text("Confirm high-frequency POST") },
+            text = {
+                Text(
+                    "A $seconds-second interval may cause unexpected SORACOM or mobile data charges. " +
+                        "Have you estimated the request volume and cost?",
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pendingIntervalSeconds = null
+                        actions.updateSoracomInterval(seconds.toString())
+                    },
+                ) { Text("Use $seconds sec") }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingIntervalSeconds = null }) { Text("Cancel") }
+            },
         )
     }
     Card(Modifier.fillMaxWidth()) {
@@ -292,18 +319,26 @@ private fun SoracomControls(state: SoracomSettingsUiState, actions: SettingsActi
                 )
             }
             Text("Endpoint: http://uni.soracom.io · ${state.status} · Retry: Disabled")
-            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                Text("POST interval")
-                OutlinedTextField(
-                    value = state.intervalSeconds,
-                    onValueChange = actions::updateSoracomInterval,
-                    label = { Text("Interval sec") },
-                    supportingText = {
-                        Text("${SoracomSchedulePolicy.MIN_INTERVAL_SECONDS}-${SoracomSchedulePolicy.MAX_INTERVAL_SECONDS} seconds")
-                    },
-                    singleLine = true,
-                    modifier = Modifier.padding(start = 12.dp).weight(1f),
-                )
+            Text("POST interval")
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                SoracomSchedulePolicy.ALLOWED_INTERVAL_SECONDS.forEach { seconds ->
+                    androidx.compose.material3.FilterChip(
+                        selected = state.intervalSeconds.toIntOrNull() == seconds,
+                        onClick = {
+                            if (state.intervalSeconds.toIntOrNull() != seconds) {
+                                if (SoracomSchedulePolicy.requiresCostConfirmation(seconds)) {
+                                    pendingIntervalSeconds = seconds
+                                } else {
+                                    actions.updateSoracomInterval(seconds.toString())
+                                }
+                            }
+                        },
+                        label = { Text("${seconds}s") },
+                    )
+                }
             }
             Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                 Checkbox(checked = state.sendNoFix, onCheckedChange = actions::updateSoracomSendNoFix)

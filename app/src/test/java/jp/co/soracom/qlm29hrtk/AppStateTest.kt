@@ -14,6 +14,10 @@ class AppStateTest {
         assertEquals("AUTO", state.mountPoint)
     }
 
+    @Test fun soracomPeriodicPostDefaultsToSixtySeconds() {
+        assertEquals("60", AppSoracomState().intervalSeconds)
+    }
+
     @Test fun usbConnectionStateDefinesRuntimeSemanticsAndDisplayLabels() {
         assertFalse(UsbConnectionState.DISCONNECTED.isActive)
         assertTrue(UsbConnectionState.CONNECTING.isActive)
