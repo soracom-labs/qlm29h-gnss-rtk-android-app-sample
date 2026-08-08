@@ -64,19 +64,29 @@ SORACOM Arcを使用する場合は、SORACOMの公式手順に従ってAndroid�
 
 ## APKの入手と確認
 
-APKはソースコードのGit履歴には含めません。社内評価版を公開する場合は、PrivateリポジトリのGitHub Releasesに、`Evaluation`と明記したAPKとSHA-256チェックサムを添付します。信頼できる配布元から取得し、Release Notesに記載されたバージョンとチェックサムが一致することを確認してください。
+社内評価版APKは、このPrivateリポジトリの[GitHub Releases](https://github.com/soracom-labs/qlm29h-gnss-rtk-android-app-sample/releases)でPre-releaseとして公開しています。リポジトリのRead権限を持つ社内GitHubアカウントでサインインし、最新の`Evaluation` Releaseを開いてください。
+
+Releaseの`Assets`から、次の2ファイルを同じフォルダーへダウンロードします。
+
+- `*-evaluation.*-debug.apk`: Androidへインストールする社内評価版アプリ
+- `*.apk.sha256`: APKのSHA-256チェックサム
+
+APKはソースコードのGit履歴には含めていません。ダウンロード前にRelease Notesで対応Androidバージョン、評価版であること、既知の制約を確認し、ダウンロード後はチェックサムが一致することを確認してください。
 
 macOSまたはLinuxでの確認例:
 
 ```sh
-shasum -a 256 qlm29h-rtk-0.1.0-evaluation-debug.apk
+shasum -a 256 -c qlm29h-rtk-0.1.0-evaluation.1-debug.apk.sha256
 ```
 
 Windows PowerShellでの確認例:
 
 ```powershell
-Get-FileHash .\qlm29h-rtk-0.1.0-evaluation-debug.apk -Algorithm SHA256
+Get-FileHash .\qlm29h-rtk-0.1.0-evaluation.1-debug.apk -Algorithm SHA256
+Get-Content .\qlm29h-rtk-0.1.0-evaluation.1-debug.apk.sha256
 ```
+
+PowerShellでは、`Get-FileHash`の`Hash`と`.sha256`ファイル先頭の値が一致することを確認してください。APKの端末への導入方法は、後述の「Android端末の初期設定」を参照してください。
 
 本リポジトリから評価APKを作成・配布する担当者は、[APK配布ガイド](docs/DISTRIBUTION.md)に従ってください。
 
