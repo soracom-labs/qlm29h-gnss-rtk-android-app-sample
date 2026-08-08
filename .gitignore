@@ -1,0 +1,26 @@
+.gradle/
+/.gradle-home/
+/.kotlin/
+/.tooling/
+.idea/
+local.properties
+**/build/
+*.iml
+.DS_Store
+
+# Local connectivity provisioning material; may contain private keys.
+/wireguard.conf
+
+# Real-world GNSS/NTRIP captures may contain precise routes and timestamps.
+/misc/
+
+# Release signing material must never enter source control.
+/keystore.properties
+*.jks
+*.keystore
+
+# APK/AAB files are published as release assets, not committed to Git history.
+*.apk
+*.aab
+*.idsig
+/dist/
