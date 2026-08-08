@@ -1,6 +1,6 @@
 # QLM29H RTK Android
 
-Quectel QLM29HBAA-GMをAndroid端末へUSB接続し、NTRIP補正を受信しながら測位状態と走行軌跡を確認・保存するためのアプリケーションです。保存したセッションは、Windows版QGNSS v2.5で再生できるNMEA/RTCMログとして共有できます。
+Quectel QLM29HBAA-GMをAndroid端末へUSB接続し、NTRIP補正を受信しながらGNSS/RTK測位状態と走行軌跡を確認・保存するためのアプリケーションです。保存した測位セッションデータは、Windows版QGNSS v2.5で再生できるNMEA/RTCMログとして共有/エクスポートできます。
 
 本プロジェクトは現在、社内評価・研究開発向けの試作版です。一般消費者向け製品、測量成果を保証する機器、カーナビゲーションまたは運転支援システムではありません。
 
@@ -9,7 +9,7 @@ Quectel QLM29HBAA-GMをAndroid端末へUSB接続し、NTRIP補正を受信しな
 - QLM29HのSPS/DGPS/RTK Float/RTK Fixed/DR状態の確認
 - NTRIP補正データを使用したRTK測位の実機評価
 - 測位点、品質別軌跡、セッション集計の記録
-- Android端末自身のGNSSとの参考比較
+- Android端末自身のGNSS測位との参考比較
 - SORACOM Unified Endpointへの測位情報送信試験
 - セッションログのQGNSS v2.5または自作Viewerでの再解析
 
@@ -30,13 +30,13 @@ Quectel QLM29HBAA-GMをAndroid端末へUSB接続し、NTRIP補正を受信しな
 - アプリ、地図キャッシュ、走行ログを保存できる空き容量
 - NTRIPおよび地図を利用できるモバイル通信またはWi-Fi
 
-USB充電専用ケーブルでは通信できません。端末やアダプターからの給電が不安定な場合は、外部給電可能なUSBハブを検討してください。
+USB充電専用ケーブルでは通信できません。
 
 ### GNSS機器
 
 - 動作確認済み: Quectel QLM29HBAA-GM
 - USBシリアル設定: 115200 bps、8 data bits、no parity、1 stop bit
-- 対応するGNSSアンテナと、十分な上空視界
+- 十分な上空視界を確保すること
 
 USBシリアル機器の検出には`usb-serial-for-android`を使用しています。QLM29HBAA-GM以外のQuectel製品やUSB変換器は、一覧に表示されても正常動作を保証しません。
 
@@ -44,7 +44,8 @@ USBシリアル機器の検出には`usb-serial-for-android`を使用してい�
 
 利用する機能に応じて、以下を各利用者が用意してください。
 
-- NTRIP casterのHost、Port、Mount Point、Username、Password
+- RTK 補正情報サービスのアカウント
+  - SORACOMなどで QLM29H 購入した際に発行され、Username、Passwordなどがメールで通知されます
 - SORACOM Unified Endpointを利用する場合は、SORACOM Air for セルラー、または事前設定済みのSORACOM Arc接続
 - OpenFreeMapへアクセスできるインターネット接続
 
@@ -57,7 +58,7 @@ Android端末からUnified Endpointへ送信するには、次のいずれかの
 - [SORACOM Air for セルラー](https://users.soracom.io/ja-jp/docs/air/)を利用する
 - 任意のIPネットワークから[事前設定済みのSORACOM Arc](https://users.soracom.io/ja-jp/docs/arc/)を利用する
 
-本リポジトリおよび本アプリは、SORACOM Arcの接続設定、設定ファイルの生成・配布・登録を行いません。Arcを使用する場合は、SORACOMの公式手順に従ってAndroid端末側の接続を完了してから、本アプリのSORACOM Unified Endpoint機能を有効にしてください。
+SORACOM Arcを使用する場合は、SORACOMの公式手順に従ってAndroid端末にWireGuardアプリケーションを導入し接続設定を完了してから、本アプリのSORACOM Unified Endpoint機能を有効にしてください。
 
 送信データをSORACOM Harvest Dataなどで受け取る場合は、対象のSIMまたはArcのバーチャルSIM/Subscriberが所属するグループについて、利用する転送先も事前に設定します。Unified Endpointの役割と設定方法は、[Unified Endpointの機能](https://users.soracom.io/ja-jp/docs/unified-endpoint/feature/)および[Harvest Dataへデータを送信する手順](https://users.soracom.io/ja-jp/docs/unified-endpoint/funnel-and-harvest/)を参照してください。
 
@@ -123,13 +124,13 @@ Smartphone GNSSは初期状態で無効です。参考比較が必要な場合�
 
 ## Android権限
 
-| 権限・確認 | 使用目的 | 必要になるタイミング |
-|---|---|---|
-| USB機器へのアクセス | QLM29Hとのシリアル通信 | USB接続時 |
-| 通知 | USB/NTRIPまたはバックグラウンド測位の継続状態表示 | 初回起動時 |
-| 正確な位置情報 | Smartphone GNSSの参考軌跡 | Smartphone GNSSを初めて有効化するときだけ |
-| インターネット・ネットワーク状態 | 地図、NTRIP、SORACOM送信 | 各ネットワーク機能の利用時 |
-| Foreground Service | 画面消灯中や他アプリ表示中の継続動作 | USB接続中またはSPバックグラウンド取得中 |
+| 権限・確認                       | 使用目的                                          | 必要になるタイミング                      |
+| -------------------------------- | ------------------------------------------------- | ----------------------------------------- |
+| USB機器へのアクセス              | QLM29Hとのシリアル通信                            | USB接続時                                 |
+| 通知                             | USB/NTRIPまたはバックグラウンド測位の継続状態表示 | 初回起動時                                |
+| 正確な位置情報                   | Smartphone GNSSの参考軌跡                         | Smartphone GNSSを初めて有効化するときだけ |
+| インターネット・ネットワーク状態 | 地図、NTRIP、SORACOM送信                          | 各ネットワーク機能の利用時                |
+| Foreground Service               | 画面消灯中や他アプリ表示中の継続動作              | USB接続中またはSPバックグラウンド取得中   |
 
 Smartphone GNSSを使用しない場合、位置情報権限を許可する必要はありません。Smartphone GNSSの位置はNTRIP、SORACOM、Consoleへ送られず、QLM29Hの測位とは分離して保存されます。
 
@@ -137,7 +138,7 @@ Smartphone GNSSを使用しない場合、位置情報権限を許可する必�
 
 - NTRIP接続はNTRIP v1とBasic認証を使用し、現行版にはTLS機能がありません。認証情報とGGAが暗号化されないため、信頼できる閉域網、VPNまたは適切に保護されたネットワークで使用してください。
 - NTRIPのUsername/PasswordはAndroid Keystoreを利用して端末内で暗号化保存します。Host、Port、Mount Pointなどの一般設定はDataStoreへ保存します。
-- SORACOM送信先は`http://uni.soracom.io`に固定されています。アプリ層では平文HTTPであるため、SORACOM Air for セルラーまたは事前設定済みのSORACOM ArcによるSORACOM接続環境で使用してください。
+- SORACOM送信先は Unified Endpoint の HTTP エントリポイント `http://uni.soracom.io`に固定されています。Unified Endpoint はSORACOM Air for セルラーまたは事前設定済みのSORACOM ArcによるSORACOM接続環境からのみ接続可能です。
 - SORACOM送信は初期状態で無効です。有効化時にUSB、最新Fix、送信結果を検証します。
 - 広告SDK、利用状況分析SDK、外部クラッシュレポートSDKは組み込んでいません。
 
