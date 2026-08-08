@@ -17,6 +17,8 @@ class TrackRepository(private val dao: TrackDao) {
     suspend fun loadSessionPoints(sessionId: String): List<TrackPointEntity> = dao.loadSessionPoints(sessionId)
     private var sessionId: String? = null
     private var lastSavedAt = 0L
+    private var maxPoints = TrackRetentionPolicy.DEFAULT_MAX_POINTS
+    private var retainedPointCount: Int? = null
     private val mutex = Mutex()
 
     suspend fun startSession(): String = mutex.withLock { startSessionLocked() }
@@ -60,28 +62,48 @@ class TrackRepository(private val dao: TrackDao) {
             ),
         )
         lastSavedAt = now
-        prune(now)
+        val count = retainedPointCount?.plus(1) ?: dao.countPoints()
+        retainedPointCount = prune(count)
         return true
     }
 
-    suspend fun clearAll() = mutex.withLock { dao.clearPointsAndResetCounts() }
-    suspend fun deleteEndedSession(sessionId: String): Boolean = mutex.withLock { dao.deleteEndedSession(sessionId) > 0 }
+    suspend fun clearAll() = mutex.withLock {
+        dao.clearPointsAndResetCounts()
+        retainedPointCount = 0
+    }
+    suspend fun deleteEndedSession(sessionId: String): Boolean = mutex.withLock {
+        (dao.deleteEndedSession(sessionId) > 0).also { deleted ->
+            if (deleted) retainedPointCount = null
+        }
+    }
 
-    private suspend fun prune(now: Long) {
+    suspend fun updateMaxPoints(value: Int) = mutex.withLock {
+        require(TrackRetentionPolicy.isAllowed(value))
+        maxPoints = value
+        retainedPointCount = prune(retainedPointCount ?: dao.countPoints())
+    }
+
+    private suspend fun prune(currentCount: Int): Int {
         // DATA-02: retention is a storage policy. It is intentionally separate
         // from the smaller Live Map query limit above (DATA-03).
-        dao.deleteOlderThan(TrackRetentionPolicy.cutoff(now))
-        dao.trimToNewest(TrackRetentionPolicy.maxPoints)
+        val excess = TrackRetentionPolicy.excessPointCount(currentCount, maxPoints)
+        if (excess == 0) return currentCount
+        return currentCount - dao.deleteOldestPoints(excess)
     }
 
     companion object {
-        const val MAX_POINTS = 50_000
-        const val RETENTION_MILLIS = 7L * 24 * 60 * 60 * 1_000
         const val MAP_INTERVAL_MILLIS = 1_000L
     }
 }
 
 object TrackRetentionPolicy {
-    const val maxPoints = TrackRepository.MAX_POINTS
-    fun cutoff(now: Long): Long = now - TrackRepository.RETENTION_MILLIS
+    val ALLOWED_MAX_POINTS = listOf(50_000, 100_000, 300_000)
+    const val DEFAULT_MAX_POINTS = 50_000
+
+    fun isAllowed(value: Int): Boolean = value in ALLOWED_MAX_POINTS
+    fun normalize(value: Int?): Int = value?.takeIf(::isAllowed) ?: DEFAULT_MAX_POINTS
+    fun excessPointCount(currentCount: Int, maxPoints: Int): Int {
+        require(isAllowed(maxPoints))
+        return (currentCount - maxPoints).coerceAtLeast(0)
+    }
 }

@@ -5,6 +5,7 @@ import jp.co.soracom.qlm29hrtk.nmea.GgaFix
 import jp.co.soracom.qlm29hrtk.nmea.NmeaType
 import jp.co.soracom.qlm29hrtk.ntrip.MountPoint
 import jp.co.soracom.qlm29hrtk.ntrip.NtripDefaults
+import jp.co.soracom.qlm29hrtk.location.TrackRetentionPolicy
 import jp.co.soracom.qlm29hrtk.soracom.SoracomQualityPolicy
 import jp.co.soracom.qlm29hrtk.storage.SessionEntity
 import jp.co.soracom.qlm29hrtk.storage.SmartphoneTrackPointEntity
@@ -15,6 +16,11 @@ import jp.co.soracom.qlm29hrtk.usb.UsbSerialDevice
 data class AppDisplayState(
     val darkTheme: Boolean = false,
     val keepScreenOn: Boolean = false,
+)
+
+/** Shared storage policy for QLM and SP points; point counts remain in their owning feature states. */
+data class AppStorageState(
+    val trackPointLimit: Int = TrackRetentionPolicy.DEFAULT_MAX_POINTS,
 )
 
 enum class UsbConnectionState(val label: String) {
@@ -172,5 +178,6 @@ data class AppState(
     val ntrip: AppNtripState = AppNtripState(),
     val soracom: AppSoracomState = AppSoracomState(),
     val display: AppDisplayState = AppDisplayState(),
+    val storage: AppStorageState = AppStorageState(),
     val smartphone: AppSmartphoneState = AppSmartphoneState(),
 )

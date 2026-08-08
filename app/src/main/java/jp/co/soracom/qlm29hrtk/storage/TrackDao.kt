@@ -33,6 +33,9 @@ interface TrackDao {
     @Query("SELECT COUNT(*) FROM track_points")
     fun observePointCount(): Flow<Int>
 
+    @Query("SELECT COUNT(*) FROM track_points")
+    suspend fun countPoints(): Int
+
     @Query("SELECT * FROM track_points ORDER BY timestamp DESC LIMIT :limit")
     fun observeLatestPoints(limit: Int): Flow<List<TrackPointEntity>>
 
@@ -45,11 +48,8 @@ interface TrackDao {
     @Query("SELECT * FROM sessions ORDER BY startedAt DESC")
     fun observeSessions(): Flow<List<SessionEntity>>
 
-    @Query("DELETE FROM track_points WHERE timestamp < :cutoff")
-    suspend fun deleteOlderThan(cutoff: Long): Int
-
-    @Query("DELETE FROM track_points WHERE id NOT IN (SELECT id FROM track_points ORDER BY timestamp DESC, id DESC LIMIT :limit)")
-    suspend fun trimToNewest(limit: Int): Int
+    @Query("DELETE FROM track_points WHERE id IN (SELECT id FROM track_points ORDER BY timestamp ASC, id ASC LIMIT :count)")
+    suspend fun deleteOldestPoints(count: Int): Int
 
     @Query("DELETE FROM track_points WHERE sessionId = :sessionId")
     suspend fun deleteSessionPoints(sessionId: String)

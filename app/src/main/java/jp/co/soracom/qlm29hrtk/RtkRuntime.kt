@@ -37,6 +37,7 @@ import jp.co.soracom.qlm29hrtk.settings.StoredNtripSettings
 import jp.co.soracom.qlm29hrtk.settings.SettingsValidator
 import jp.co.soracom.qlm29hrtk.settings.SettingsValidationResult
 import jp.co.soracom.qlm29hrtk.location.TrackRepository
+import jp.co.soracom.qlm29hrtk.location.TrackRetentionPolicy
 import kotlinx.coroutines.flow.collectLatest
 import jp.co.soracom.qlm29hrtk.storage.TrackPointEntity
 import jp.co.soracom.qlm29hrtk.storage.SessionEntity
@@ -119,6 +120,10 @@ class RtkRuntime(
             runCatching {
                 val settings = settingsRepository?.loadNtrip() ?: StoredNtripSettings()
                 val credentials = credentialStore?.load() ?: NtripCredentials()
+                val trackPointLimit = TrackRetentionPolicy.normalize(settings.trackPointLimit)
+                // DATA-02: apply the persisted shared limit before exposing it to Settings.
+                trackRepository?.updateMaxPoints(trackPointLimit)
+                smartphoneTrackRepository?.updateMaxPoints(trackPointLimit)
                 mutableState.value = mutableState.value.copy(
                     ntrip = mutableState.value.ntrip.copy(
                         host = settings.host,
@@ -141,6 +146,7 @@ class RtkRuntime(
                         darkTheme = settings.darkTheme,
                         keepScreenOn = settings.keepScreenOn,
                     ),
+                    storage = AppStorageState(trackPointLimit = trackPointLimit),
                     // Active location capture is deliberately session-scoped. A
                     // process restart (including recovery from a crash) always
                     // returns to the safe Disabled state.
@@ -535,6 +541,7 @@ class RtkRuntime(
                         soracomSendNoFix = snapshot.soracom.sendNoFix,
                         soracomAllowNtripDisconnected = snapshot.soracom.allowNtripDisconnected,
                         soracomQualityPolicy = snapshot.soracom.qualityPolicy.name,
+                        trackPointLimit = snapshot.storage.trackPointLimit,
                     ),
                 )
                 credentialStore?.save(NtripCredentials(snapshot.ntrip.username, snapshot.ntrip.password))
@@ -681,6 +688,25 @@ class RtkRuntime(
             smartphoneTrackRepository?.clearAll()
         }
             .onFailure { mutableState.value = mutableState.value.copy(notice = AppNoticeState("Unable to clear tracks")) }
+    }
+
+    fun updateTrackPointLimit(value: Int) {
+        if (!TrackRetentionPolicy.isAllowed(value)) {
+            mutableState.value = mutableState.value.copy(notice = AppNoticeState("Unsupported track point limit"))
+            return
+        }
+        runtimeScope.launch {
+            runCatching {
+                settingsRepository?.saveTrackPointLimit(value)
+                trackRepository?.updateMaxPoints(value)
+                smartphoneTrackRepository?.updateMaxPoints(value)
+            }.onSuccess {
+                val current = mutableState.value
+                mutableState.value = current.copy(storage = current.storage.copy(trackPointLimit = value), notice = AppNoticeState())
+            }.onFailure {
+                mutableState.value = mutableState.value.copy(notice = AppNoticeState("Unable to update track point limit"))
+            }
+        }
     }
 
     fun deleteSession(sessionId: String) = runtimeScope.launch {

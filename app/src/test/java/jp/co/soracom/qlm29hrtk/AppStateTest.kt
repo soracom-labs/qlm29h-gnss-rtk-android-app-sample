@@ -59,6 +59,18 @@ class AppStateTest {
         assertEquals(42, changed.tracking.pointCount)
     }
 
+    @Test fun storageCopyDoesNotReplaceTrackingOrSmartphoneState() {
+        val initial = AppState(
+            tracking = AppTrackingState(pointCount = 42),
+            smartphone = AppSmartphoneState(pointCount = 24),
+        )
+        val changed = initial.copy(storage = initial.storage.copy(trackPointLimit = 300_000))
+
+        assertEquals(300_000, changed.storage.trackPointLimit)
+        assertEquals(42, changed.tracking.pointCount)
+        assertEquals(24, changed.smartphone.pointCount)
+    }
+
     @Test fun usbCopyDoesNotReplaceDisplayOrTrackingState() {
         val initial = AppState(display = AppDisplayState(darkTheme = true), tracking = AppTrackingState(pointCount = 42))
         val changed = initial.copy(usb = initial.usb.copy(connection = UsbConnectionState.CONNECTED, receivedBytes = 10))

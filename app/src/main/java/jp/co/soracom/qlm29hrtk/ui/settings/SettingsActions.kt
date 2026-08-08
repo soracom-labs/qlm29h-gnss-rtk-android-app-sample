@@ -31,6 +31,7 @@ interface SettingsActions {
     fun updateSoracomAllowNtripDisconnected(value: Boolean)
     fun updateSoracomQualityPolicy(value: SoracomQualityPolicy)
     fun sendSoracomNow()
+    fun updateTrackPointLimit(value: Int)
     fun clearTracks()
     fun selectMapSession(sessionId: String?)
     fun deleteSession(sessionId: String)
@@ -63,6 +64,7 @@ class RtkSettingsActions(private val runtime: RtkRuntime) : SettingsActions {
     override fun updateSoracomAllowNtripDisconnected(value: Boolean) = runtime.updateSoracomAllowNtripDisconnected(value)
     override fun updateSoracomQualityPolicy(value: SoracomQualityPolicy) = runtime.updateSoracomQualityPolicy(value)
     override fun sendSoracomNow() = runtime.sendSoracomNow().let { Unit }
+    override fun updateTrackPointLimit(value: Int) = runtime.updateTrackPointLimit(value)
     override fun clearTracks() = runtime.clearTracks().let { Unit }
     override fun selectMapSession(sessionId: String?) = runtime.selectMapSession(sessionId)
     override fun deleteSession(sessionId: String) = runtime.deleteSession(sessionId).let { Unit }

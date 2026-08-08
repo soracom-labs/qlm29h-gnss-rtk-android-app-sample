@@ -44,6 +44,8 @@ QLMは `USB → SessionRawLogStore → NMEA framing/checksum → GGA parsing →
 
 `SessionRawLogStore`はUSBセッションIDごとのディレクトリへNMEA RXとRTCM RXを別々に保存する。構造化されたTrackPointは高速なMap表示用、生ログは外部リプレイと将来の再解析用であり、片方からもう片方を完全再構成できるとはみなさない。QGNSS向け共有ファイルへアプリの時刻やRX/TXラベルを混ぜない。導入前のセッションだけは`rawGga`からGGA-onlyログを生成する。
 
+TrackPointの保存上限は`AppStorageState`とDataStoreへ保持し、QLMとSPの各Repositoryへ同じ選択値を独立に適用する。保持は件数だけで制御し、経過日数では削除しない。上限変更時の即時trimと新規保存時のtrimはRepositoryが担当し、生NMEA/RTCMログには適用しない。
+
 SPは `Android GPS Provider → AppSmartphoneState / SmartphoneTrackRepository → SP Map layer` の閉じた経路である。QLM経路へ合流させてはならない（`SP-01`, `SP-02`）。
 
 ## Mapの表示モデル

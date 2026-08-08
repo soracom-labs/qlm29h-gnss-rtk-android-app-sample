@@ -32,10 +32,10 @@ interface SmartphoneTrackDao {
     fun observeLatest(limit: Int): Flow<List<SmartphoneTrackPointEntity>>
     @Query("SELECT COUNT(*) FROM smartphone_track_points")
     fun observeCount(): Flow<Int>
-    @Query("DELETE FROM smartphone_track_points WHERE timestamp < :cutoff")
-    suspend fun deleteOlderThan(cutoff: Long): Int
-    @Query("DELETE FROM smartphone_track_points WHERE id NOT IN (SELECT id FROM smartphone_track_points ORDER BY timestamp DESC, id DESC LIMIT :limit)")
-    suspend fun trimToNewest(limit: Int): Int
+    @Query("SELECT COUNT(*) FROM smartphone_track_points")
+    suspend fun countPoints(): Int
+    @Query("DELETE FROM smartphone_track_points WHERE id IN (SELECT id FROM smartphone_track_points ORDER BY timestamp ASC, id ASC LIMIT :count)")
+    suspend fun deleteOldestPoints(count: Int): Int
     @Query("DELETE FROM smartphone_track_points")
     suspend fun clearAll()
 }

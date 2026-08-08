@@ -14,7 +14,7 @@
 - Settingsの表示と確認ダイアログ: `ui/settings/SettingsScreen.kt`
 - 数値設定の許容範囲: `settings/SettingsValidator.kt`と対応テスト
 - テーマ: `ui/theme/Theme.kt`
-- 保存上限: `TrackRepository`と`SmartphoneTrackRepository`。表示文言と保持テストも同時更新する。
+- 保存上限: `TrackRetentionPolicy`、`TrackRepository`、`SmartphoneTrackRepository`、`SettingsRepository`。選択肢、表示文言、永続化、保持テストを同時更新し、生ログの保持とは分離する。
 - SORACOM payload項目: `soracom/SoracomPayload.kt`。SPを混入させない。
 
 ## 注意が必要な変更

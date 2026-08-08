@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.first
 import jp.co.soracom.qlm29hrtk.ntrip.NtripDefaults
+import jp.co.soracom.qlm29hrtk.location.TrackRetentionPolicy
 import jp.co.soracom.qlm29hrtk.soracom.SoracomSchedulePolicy
 
 data class StoredNtripSettings(
@@ -25,11 +26,13 @@ data class StoredNtripSettings(
     val soracomSendNoFix: Boolean = false,
     val soracomAllowNtripDisconnected: Boolean = true,
     val soracomQualityPolicy: String = "ALL_VALID",
+    val trackPointLimit: Int = TrackRetentionPolicy.DEFAULT_MAX_POINTS,
 )
 
 interface SettingsRepository {
     suspend fun loadNtrip(): StoredNtripSettings
     suspend fun saveNtrip(settings: StoredNtripSettings)
+    suspend fun saveTrackPointLimit(value: Int)
 }
 
 private val Context.settingsDataStore by preferencesDataStore(name = "settings")
@@ -59,6 +62,7 @@ class AndroidSettingsRepository(context: Context) : SettingsRepository {
             soracomSendNoFix = values[SORACOM_SEND_NO_FIX] ?: false,
             soracomAllowNtripDisconnected = values[SORACOM_ALLOW_NTRIP_DISCONNECTED] ?: true,
             soracomQualityPolicy = values[SORACOM_QUALITY_POLICY] ?: "ALL_VALID",
+            trackPointLimit = TrackRetentionPolicy.normalize(values[TRACK_POINT_LIMIT]),
         )
     }
 
@@ -79,7 +83,13 @@ class AndroidSettingsRepository(context: Context) : SettingsRepository {
             values[SORACOM_SEND_NO_FIX] = settings.soracomSendNoFix
             values[SORACOM_ALLOW_NTRIP_DISCONNECTED] = settings.soracomAllowNtripDisconnected
             values[SORACOM_QUALITY_POLICY] = settings.soracomQualityPolicy
+            values[TRACK_POINT_LIMIT] = TrackRetentionPolicy.normalize(settings.trackPointLimit)
         }
+    }
+
+    override suspend fun saveTrackPointLimit(value: Int) {
+        require(TrackRetentionPolicy.isAllowed(value))
+        appContext.settingsDataStore.edit { values -> values[TRACK_POINT_LIMIT] = value }
     }
 
     private companion object {
@@ -98,5 +108,6 @@ class AndroidSettingsRepository(context: Context) : SettingsRepository {
         val SORACOM_SEND_NO_FIX = booleanPreferencesKey("soracom_send_no_fix")
         val SORACOM_ALLOW_NTRIP_DISCONNECTED = booleanPreferencesKey("soracom_allow_ntrip_disconnected")
         val SORACOM_QUALITY_POLICY = stringPreferencesKey("soracom_quality_policy")
+        val TRACK_POINT_LIMIT = intPreferencesKey("track_point_limit")
     }
 }

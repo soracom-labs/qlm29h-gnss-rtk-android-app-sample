@@ -36,12 +36,14 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import jp.co.soracom.qlm29hrtk.soracom.SoracomQualityPolicy
 import jp.co.soracom.qlm29hrtk.soracom.SoracomSchedulePolicy
+import jp.co.soracom.qlm29hrtk.location.TrackRetentionPolicy
 import jp.co.soracom.qlm29hrtk.sessionlog.NmeaExportSource
 import jp.co.soracom.qlm29hrtk.sessionlog.SessionLogShare
 import jp.co.soracom.qlm29hrtk.storage.StorageInspector
 import jp.co.soracom.qlm29hrtk.ui.map.MapCacheControls
 import jp.co.soracom.qlm29hrtk.usb.UsbPermissionManager
 import java.time.Instant
+import java.text.NumberFormat
 
 @Composable
 fun SettingsScreen(
@@ -137,7 +139,7 @@ private fun SmartphoneGnssControls(state: SmartphoneSettingsUiState, actions: Se
             }
             Text("Status: ${state.status} · Provider: GPS")
             Text("Last: ${state.lastLocationAt ?: "-"} · Accuracy: ${state.accuracy?.let { "±${"%.1f".format(it)} m" } ?: "-"}")
-            Text("Saved SP points: ${state.pointCount} / 50,000", style = MaterialTheme.typography.bodySmall)
+            Text("Saved SP points: ${formatPointCount(state.pointCount)}", style = MaterialTheme.typography.bodySmall)
         }
     }
 }
@@ -250,7 +252,7 @@ private fun StorageCard(state: TrackStorageUiState) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Storage", style = MaterialTheme.typography.titleMedium)
-            Text("Track points: ${state.qlmPointCount} / 50,000 · Retention: 7 days")
+            Text("Track points: QLM ${formatPointCount(state.qlmPointCount)} · SP ${formatPointCount(state.smartphonePointCount)}")
             Text("NMEA logs: ${StorageInspector.formatBytes(logBytes)}")
             Button(
                 onClick = { confirmDeleteLogs = true },
@@ -387,9 +389,11 @@ private fun SoracomControls(state: SoracomSettingsUiState, actions: SettingsActi
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @androidx.compose.runtime.Composable
 private fun TrackControls(state: TrackStorageUiState, actions: SettingsActions) {
     var confirmClear by remember { mutableStateOf(false) }
+    var pendingPointLimit by remember { mutableStateOf<Int?>(null) }
     if (confirmClear) {
         AlertDialog(
             onDismissRequest = { confirmClear = false },
@@ -404,21 +408,70 @@ private fun TrackControls(state: TrackStorageUiState, actions: SettingsActions) 
             dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("Cancel") } },
         )
     }
+    pendingPointLimit?.let { limit ->
+        AlertDialog(
+            onDismissRequest = { pendingPointLimit = null },
+            title = { Text("Reduce track cache limit?") },
+            text = {
+                Text(
+                    "Changing the limit to ${formatPointCount(limit)} points will permanently delete the oldest " +
+                        "QLM29H and Smartphone GNSS points above that limit. This cannot be undone.",
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingPointLimit = null
+                    actions.updateTrackPointLimit(limit)
+                }) { Text("Apply") }
+            },
+            dismissButton = { TextButton(onClick = { pendingPointLimit = null }) { Text("Cancel") } },
+        )
+    }
     Card(Modifier.fillMaxWidth()) {
-        Row(
+        Column(
             Modifier.fillMaxWidth().padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Column {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Text("Track cache", style = MaterialTheme.typography.titleMedium)
-                Text("${state.qlmPointCount} / 50,000 points · 7 days")
-                Text("SP: ${state.smartphonePointCount} / 50,000 points · 7 days", style = MaterialTheme.typography.bodySmall)
+                Button(onClick = { confirmClear = true }) { Text("Clear") }
             }
-            Button(onClick = { confirmClear = true }) { Text("Clear") }
+            Text("QLM: ${formatPointCount(state.qlmPointCount)} / ${formatPointCount(state.pointLimit)} points")
+            Text(
+                "SP: ${formatPointCount(state.smartphonePointCount)} / ${formatPointCount(state.pointLimit)} points",
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Text("Maximum saved points per source", style = MaterialTheme.typography.bodySmall)
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                TrackRetentionPolicy.ALLOWED_MAX_POINTS.forEach { limit ->
+                    androidx.compose.material3.FilterChip(
+                        selected = state.pointLimit == limit,
+                        onClick = {
+                            if (state.pointLimit != limit) {
+                                if (limit < state.pointLimit) pendingPointLimit = limit
+                                else actions.updateTrackPointLimit(limit)
+                            }
+                        },
+                        label = { Text(formatPointCount(limit)) },
+                    )
+                }
+            }
+            Text(
+                "Oldest points are removed only when this limit is exceeded. Higher limits use more storage and may slow past-session maps.",
+                style = MaterialTheme.typography.bodySmall,
+            )
         }
     }
 }
+
+private fun formatPointCount(value: Int): String = NumberFormat.getIntegerInstance().format(value)
 
 @androidx.compose.runtime.Composable
 private fun NtripControls(state: NtripSettingsUiState, actions: SettingsActions) {

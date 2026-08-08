@@ -9,6 +9,8 @@ import android.location.LocationRequest
 import jp.co.soracom.qlm29hrtk.storage.SmartphoneTrackDao
 import jp.co.soracom.qlm29hrtk.storage.SmartphoneTrackPointEntity
 import java.util.UUID
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 fun interface SmartphoneLocationListener { fun onLocation(location: Location) }
 
@@ -48,8 +50,11 @@ class SmartphoneTrackRepository(private val dao: SmartphoneTrackDao) {
     val pointCount = dao.observeCount()
     private var segmentId = UUID.randomUUID().toString()
     private var lastTimestamp = 0L
+    private var maxPoints = TrackRetentionPolicy.DEFAULT_MAX_POINTS
+    private var retainedPointCount: Int? = null
+    private val mutex = Mutex()
 
-    suspend fun record(location: Location) {
+    suspend fun record(location: Location) = mutex.withLock {
         val timestamp = location.time.takeIf { it > 0 } ?: System.currentTimeMillis()
         if (lastTimestamp == 0L || timestamp - lastTimestamp > SEGMENT_GAP_MILLIS) segmentId = UUID.randomUUID().toString()
         dao.insert(
@@ -66,16 +71,30 @@ class SmartphoneTrackRepository(private val dao: SmartphoneTrackDao) {
             ),
         )
         lastTimestamp = timestamp
-        dao.deleteOlderThan(timestamp - RETENTION_MILLIS)
-        dao.trimToNewest(MAX_POINTS)
+        val count = retainedPointCount?.plus(1) ?: dao.countPoints()
+        retainedPointCount = prune(count)
     }
 
     fun startNewSegment() { lastTimestamp = 0L }
-    suspend fun clearAll() { dao.clearAll(); startNewSegment() }
+    suspend fun clearAll() = mutex.withLock {
+        dao.clearAll()
+        retainedPointCount = 0
+        startNewSegment()
+    }
+
+    suspend fun updateMaxPoints(value: Int) = mutex.withLock {
+        require(TrackRetentionPolicy.isAllowed(value))
+        maxPoints = value
+        retainedPointCount = prune(retainedPointCount ?: dao.countPoints())
+    }
+
+    private suspend fun prune(currentCount: Int): Int {
+        val excess = TrackRetentionPolicy.excessPointCount(currentCount, maxPoints)
+        if (excess == 0) return currentCount
+        return currentCount - dao.deleteOldestPoints(excess)
+    }
 
     companion object {
-        const val MAX_POINTS = 50_000
-        const val RETENTION_MILLIS = 7L * 24 * 60 * 60 * 1_000
         const val SEGMENT_GAP_MILLIS = 10_000L
     }
 }
