@@ -2,7 +2,7 @@
 
 `ic_launcher_source.png` is the source of truth for the QLM29H GNSS/RTK Android sample launcher icon.
 
-The mark, pale background, spacing, and aspect ratio are intentional. Generate density-specific PNG files by deterministic downscaling; do not redraw or reinterpret the mark with a generative image tool.
+The enlarged mark, edge-to-edge uniform pale background, spacing, and aspect ratio are intentional. Do not reintroduce an inset tile or a differently colored outer border. Generate density-specific PNG files from this approved master by deterministic downscaling; do not redraw or reinterpret it during the downscaling step.
 
 | Android density | Output size | Resource |
 |---|---:|---|

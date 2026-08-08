@@ -27,6 +27,7 @@ class SoracomScheduleControllerTest {
     }
 
     @Test fun everyNonDefaultChoiceRequiresCostConfirmation() {
+        assertEquals(listOf(30, 15, 10, 6, 5, 3), SoracomSchedulePolicy.HIGH_FREQUENCY_INTERVAL_SECONDS)
         SoracomSchedulePolicy.ALLOWED_INTERVAL_SECONDS.filterNot { it == 60 }.forEach { seconds ->
             assertTrue(SoracomSchedulePolicy.requiresCostConfirmation(seconds))
         }

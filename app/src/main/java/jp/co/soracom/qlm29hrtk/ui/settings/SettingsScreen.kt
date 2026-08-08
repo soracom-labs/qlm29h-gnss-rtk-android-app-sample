@@ -319,12 +319,26 @@ private fun SoracomControls(state: SoracomSettingsUiState, actions: SettingsActi
                 )
             }
             Text("Endpoint: http://uni.soracom.io · ${state.status} · Retry: Disabled")
-            Text("POST interval")
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text("POST interval")
+                androidx.compose.material3.FilterChip(
+                    selected = state.intervalSeconds.toIntOrNull() == SoracomSchedulePolicy.DEFAULT_INTERVAL_SECONDS,
+                    onClick = {
+                        if (state.intervalSeconds.toIntOrNull() != SoracomSchedulePolicy.DEFAULT_INTERVAL_SECONDS) {
+                            actions.updateSoracomInterval(SoracomSchedulePolicy.DEFAULT_INTERVAL_SECONDS.toString())
+                        }
+                    },
+                    label = { Text("default 60s") },
+                )
+            }
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                SoracomSchedulePolicy.ALLOWED_INTERVAL_SECONDS.forEach { seconds ->
+                SoracomSchedulePolicy.HIGH_FREQUENCY_INTERVAL_SECONDS.forEach { seconds ->
                     androidx.compose.material3.FilterChip(
                         selected = state.intervalSeconds.toIntOrNull() == seconds,
                         onClick = {

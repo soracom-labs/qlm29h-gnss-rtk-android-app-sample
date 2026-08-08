@@ -7,6 +7,7 @@ import kotlinx.coroutines.launch
 
 object SoracomSchedulePolicy {
     val ALLOWED_INTERVAL_SECONDS = listOf(3, 5, 6, 10, 15, 30, 60)
+    val HIGH_FREQUENCY_INTERVAL_SECONDS = listOf(30, 15, 10, 6, 5, 3)
     const val DEFAULT_INTERVAL_SECONDS = 60
     const val DEFAULT_INTERVAL_MILLIS = DEFAULT_INTERVAL_SECONDS * 1_000L
 
