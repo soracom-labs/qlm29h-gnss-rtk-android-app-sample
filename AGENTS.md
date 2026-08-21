@@ -26,7 +26,8 @@
 - `FGS-03`: 有効なサービス種別がなければForeground Serviceを終了する。
 - `SEC-01`: NTRIP認証情報、Authorizationヘッダー、正確な走行座標をログへ出さない。
 - `DATA-01`: Map表示上限とDB保存上限を同一視しない。
-- `NTRIP-07`: RTCM無受信による再接続と指数バックオフは`NtripSessionController`だけが所有し、認証・設定エラーを無限再試行しない。
+- `NTRIP-07`: RTCM無受信による段階式再接続は`NtripSessionController`だけが所有し、認証・設定エラーを無限再試行しない。
+- `NET-01`: Internet表示はtransport名だけで緑にせず、Androidが検証済みのdefault networkだけをOnlineとする。
 
 ## 変更時のルール
 
@@ -39,6 +40,7 @@
 - `AppState`へ平坦なフィールドを再追加せず、所有する機能別`App*State`へ追加する。ユーザー向け一時エラーは`AppNoticeState`、NMEA解析統計は`AppDiagnosticsState`を使用する。
 - NTRIPとSORACOMのCoroutineをRtkRuntimeから直接起動せず、各Session/Schedule Controllerを唯一のJob所有者にする。
 - USB受信FlowとAndroid LocationProviderをRtkRuntimeから直接登録せず、UsbSessionControllerとSmartphoneLocationControllerを唯一の所有者にする。
+- default network callbackはForeground ServiceやActivityへ重複登録せず、ApplicationスコープのAndroidConnectivityMonitorを唯一の所有者にする。
 - 文字列の接続状態は新規追加せず、型付き状態への移行を優先する。
 - 型付き接続状態の`label`は表示境界だけで使用し、Runtimeの分岐ではenum/sealed型そのものを比較する。
 - DBスキーマを変更する場合はRoom migrationと既存DB保持試験を必須とする。

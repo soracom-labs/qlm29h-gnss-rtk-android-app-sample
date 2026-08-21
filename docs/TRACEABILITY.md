@@ -17,6 +17,7 @@
 | `DATA-02` | `TrackRetentionPolicy`, `TrackRepository`, `SmartphoneTrackRepository`, `SettingsRepository`, `AppStorageState`, `TrackControls` | `TrackRetentionPolicyTest.kt`, `AppStateTest.kt`, `SettingsUiStateTest.kt`、設定永続化の実機試験 |
 | `DATA-06`, `DATA-07` | `SessionRawLogStore`, `QgnssSessionLogExporter`, `NmeaConsoleCard`, `SessionHistoryCard` | `SessionRawLogStoreTest.kt`, `QgnssSessionLogExporterTest.kt`, `UsbSessionControllerTest.kt`; QGNSS v2.5実機試験 |
 | `NTRIP-01`〜`NTRIP-04`, `NTRIP-06`, `NTRIP-07` | `NtripClient.kt`, `NtripSessionController.kt`, `NtripRetryPolicy`, `NtripDefaults`, `RtkRuntime.connectNtrip` | `NtripCoreTest.kt`, `NtripSessionControllerTest.kt`, `AppStateTest.kt` |
+| `NET-01` | `AndroidConnectivityMonitor.kt`, `InternetReachabilityPolicy.kt`, `RtkRuntime.onNetworkStatusChanged`, `MapUiState.kt` | `InternetReachabilityPolicyTest.kt`, `RtkRuntimeIntegrationTest.kt`, `MapUiStateTest.kt`、実機通信切断試験 |
 | `DATA-08` | `TrackSamplingPolicy`, `TrackRepository.record` | `TrackRetentionPolicyTest.samplingUsesGgaUtcSecondInsteadOfArrivalJitter` |
 | `SORACOM-01`〜`SORACOM-05` | `SoracomScheduleController.kt`, `SoracomSendPolicy.kt`, `SettingsValidator.kt`, `SoracomIntervalPersistencePolicy.kt`, `RtkRuntime` | `SoracomScheduleControllerTest.kt`, `SoracomSendPolicyTest.kt`, `SoracomSenderTest.kt`, `SettingsValidatorTest.kt`, `SoracomIntervalPersistencePolicyTest.kt` |
 | `DISPLAY-02` | `mipmap-*/ic_launcher.png` | `assembleDebug`, `lintDebug`、実機ランチャー確認 |

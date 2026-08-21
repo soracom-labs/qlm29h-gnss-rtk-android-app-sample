@@ -1,5 +1,6 @@
 package jp.co.soracom.qlm29hrtk
 
+import jp.co.soracom.qlm29hrtk.network.InternetReachability
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -71,6 +72,20 @@ class AppStateTest {
         assertEquals(300_000, changed.storage.trackPointLimit)
         assertEquals(42, changed.tracking.pointCount)
         assertEquals(24, changed.smartphone.pointCount)
+    }
+
+    @Test fun connectivityCopyDoesNotReplaceProtocolState() {
+        val initial = AppState(
+            usb = AppUsbState(connection = UsbConnectionState.CONNECTED),
+            ntrip = AppNtripState(connection = NtripConnectionState.CONNECTED),
+        )
+        val changed = initial.copy(
+            connectivity = initial.connectivity.copy(internet = InternetReachability.ONLINE),
+        )
+
+        assertEquals(InternetReachability.ONLINE, changed.connectivity.internet)
+        assertEquals(UsbConnectionState.CONNECTED, changed.usb.connection)
+        assertEquals(NtripConnectionState.CONNECTED, changed.ntrip.connection)
     }
 
     @Test fun usbCopyDoesNotReplaceDisplayOrTrackingState() {

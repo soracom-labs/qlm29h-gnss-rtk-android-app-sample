@@ -23,25 +23,20 @@ class NtripSessionControllerTest {
         assertTrue(NtripFailurePolicy.classify(IOException("network lost")) is NtripSessionEvent.Reconnecting)
     }
 
-    @Test fun retryPolicyUsesBoundedExponentialDelays() {
-        val policy = NtripRetryPolicy(
-            initialDelayMillis = 1_000,
-            maximumDelayMillis = 60_000,
-            jitterRatio = 0.0,
+    @Test fun retryPolicyUsesTheFieldTestedStagedSchedule() {
+        val policy = NtripRetryPolicy()
+
+        assertEquals(
+            listOf(
+                3_000L, 3_000L, 3_000L,
+                5_000L, 5_000L, 5_000L,
+                10_000L, 10_000L, 10_000L,
+                20_000L, 20_000L, 20_000L,
+                30_000L, 30_000L, 30_000L, 30_000L, 30_000L, 30_000L,
+                60_000L, 60_000L,
+            ),
+            (1..20).map(policy::delayMillis),
         )
-
-        assertEquals(listOf(1_000L, 2_000L, 4_000L, 8_000L, 16_000L, 32_000L, 60_000L, 60_000L),
-            (1..8).map(policy::delayMillis))
-    }
-
-    @Test fun retryPolicyAppliesConfiguredJitterBounds() {
-        val upper = NtripRetryPolicy(1_000, 60_000, 0.20) { span -> span }
-        val lower = NtripRetryPolicy(1_000, 60_000, 0.20) { span -> -span }
-
-        assertEquals(1_200, upper.delayMillis(1))
-        assertEquals(800, lower.delayMillis(1))
-        assertEquals(60_000, upper.delayMillis(8))
-        assertEquals(48_000, lower.delayMillis(8))
     }
 
     @Test fun transientFailureRetriesButAuthenticationFailureStops() = runTest {
@@ -50,7 +45,7 @@ class NtripSessionControllerTest {
         val controller = NtripSessionController(
             source,
             this,
-            retryPolicy = NtripRetryPolicy(100, 100, jitterRatio = 0.0),
+            retryPolicy = NtripRetryPolicy(listOf(100), 100),
         )
 
         controller.connect(config(), { "GGA" }, events::add) { }
@@ -70,7 +65,7 @@ class NtripSessionControllerTest {
         val controller = NtripSessionController(
             source,
             this,
-            retryPolicy = NtripRetryPolicy(10_000, 10_000, jitterRatio = 0.0),
+            retryPolicy = NtripRetryPolicy(listOf(10_000), 10_000),
         )
         controller.connect(config(), { "GGA" }, events::add) { }
         runCurrent()
@@ -90,7 +85,7 @@ class NtripSessionControllerTest {
         val controller = NtripSessionController(
             source,
             this,
-            retryPolicy = NtripRetryPolicy(10_000, 10_000, jitterRatio = 0.0),
+            retryPolicy = NtripRetryPolicy(listOf(10_000), 10_000),
         )
 
         controller.connect(config(), { "GGA" }, { }) { }
@@ -127,7 +122,7 @@ class NtripSessionControllerTest {
         val controller = NtripSessionController(
             source,
             this,
-            retryPolicy = NtripRetryPolicy(100, 100, jitterRatio = 0.0),
+            retryPolicy = NtripRetryPolicy(listOf(100), 100),
             monotonicMillis = { testScheduler.currentTime },
             stableReceiveMillis = 30,
         )

@@ -10,6 +10,7 @@ flowchart LR
   RT --> NTRIP["NtripSessionController"]
   RT --> SORACOM["SoracomScheduleController"]
   RT --> SP["SmartphoneLocationController"]
+  NET["AndroidConnectivityMonitor"] --> RT
   RT --> REPO["Track repositories"]
   RT --> RAW["SessionRawLogStore"]
   REPO --> ROOM["Room DB"]
@@ -38,7 +39,9 @@ Mapは`MapUiState.from(AppState)`で必要な状態だけを投影し、`MapActi
 
 長寿命Coroutineの所有者も分離している。`UsbSessionController`はUSB受信Job、`NtripSessionController`は単一ストリーム・再接続待機・キャンセル、`SoracomScheduleController`は定期送信タイマーを所有する。`SmartphoneLocationController`はLocationProvider登録を所有し、重複start/stopを防ぐ。`RtkRuntime`は結果を`AppState`へ反映するが、Controller内部のJobや登録状態を直接操作しない。
 
-NTRIPの無受信監視は`NtripClient`が半開きソケットを例外として表面化し、`NtripSessionController`が唯一のJob所有者として指数バックオフ、jitter、ネットワーク復旧時の待機解除を処理する。`RtkRuntime`の10秒監視は表示上のStale判定だけを担当し、別の再接続Jobを起動しない。接続成功だけでは失敗回数を戻さず、30秒のRTCM安定受信を回復境界とする。
+NTRIPの無受信監視は`NtripClient`が半開きソケットを例外として表面化し、`NtripSessionController`が唯一のJob所有者として3、5、10、20、30、60秒の段階式再接続とネットワーク復旧時の待機解除を処理する。`RtkRuntime`の10秒監視は表示上のStale判定だけを担当し、別の再接続Jobを起動しない。接続成功だけでは失敗回数を戻さず、30秒のRTCM安定受信を回復境界とする。
+
+Applicationスコープの`AndroidConnectivityMonitor`をdefault network callbackの唯一の所有者とする。Internet表示は`ConnectivityManager`のtransport名ではなく、default networkの`INTERNET`と`VALIDATED` capabilityを`InternetReachabilityPolicy`へ渡して決定する。Foreground Serviceの稼働有無へ監視を依存させず、ICMP到達性も定期監視に使わない。OSが検証したOnlineへの遷移だけでNTRIPの待機を解除し、Wi-Fi、Cellular、VPNの種別はSORACOM送信診断として別に保持する。
 
 ## データフロー
 

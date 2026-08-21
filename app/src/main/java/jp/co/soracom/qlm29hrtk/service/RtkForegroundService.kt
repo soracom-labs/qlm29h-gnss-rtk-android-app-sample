@@ -10,8 +10,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.hardware.usb.UsbManager
-import android.net.ConnectivityManager
-import android.net.Network
 import android.os.IBinder
 import android.content.pm.ServiceInfo
 import android.content.pm.PackageManager
@@ -31,12 +29,7 @@ class RtkForegroundService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val runtime get() = (application as RtkApplication).runtime
     private val notificationManager get() = getSystemService(NotificationManager::class.java)
-    private val connectivityManager get() = getSystemService(ConnectivityManager::class.java)
     private val usbManager get() = getSystemService(UsbManager::class.java)
-    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
-        override fun onAvailable(network: Network) = runtime.onNetworkAvailable()
-        override fun onLost(network: Network) = runtime.onNetworkLost()
-    }
     private val usbReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
@@ -55,7 +48,6 @@ class RtkForegroundService : Service() {
             addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED)
             addAction(UsbManager.ACTION_USB_DEVICE_DETACHED)
         }, Context.RECEIVER_NOT_EXPORTED)
-        connectivityManager.registerDefaultNetworkCallback(networkCallback)
         updateForeground(runtime.state.value)
         scope.launch {
             runtime.state.collectLatest(::updateForeground)
@@ -75,7 +67,6 @@ class RtkForegroundService : Service() {
 
     override fun onDestroy() {
         runCatching { unregisterReceiver(usbReceiver) }
-        runCatching { connectivityManager.unregisterNetworkCallback(networkCallback) }
         scope.cancel()
         super.onDestroy()
     }

@@ -7,8 +7,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
-import kotlin.math.roundToLong
-import kotlin.random.Random
 import javax.net.ssl.SSLException
 
 sealed interface NtripSessionEvent {
@@ -41,31 +39,30 @@ object NtripFailurePolicy {
     }
 }
 
-/** NTRIP-07: bounded exponential retry avoids reconnect storms during field outages. */
+/** NTRIP-07: staged retries recover quickly without reaching long delays too early. */
 class NtripRetryPolicy(
-    private val initialDelayMillis: Long = 1_000,
-    private val maximumDelayMillis: Long = 60_000,
-    private val jitterRatio: Double = 0.20,
-    private val jitterOffset: (Long) -> Long = { span ->
-        if (span == 0L) 0L else Random.nextLong(-span, span + 1)
-    },
+    private val scheduleMillis: List<Long> = DEFAULT_SCHEDULE_MILLIS,
+    private val fallbackDelayMillis: Long = 60_000,
 ) {
     init {
-        require(initialDelayMillis > 0)
-        require(maximumDelayMillis >= initialDelayMillis)
-        require(jitterRatio in 0.0..1.0)
+        require(scheduleMillis.isNotEmpty())
+        require(scheduleMillis.all { it > 0 })
+        require(fallbackDelayMillis > 0)
     }
 
     fun delayMillis(attempt: Int): Long {
         require(attempt > 0)
-        var base = initialDelayMillis
-        var remainingDoublings = attempt - 1
-        while (remainingDoublings > 0 && base < maximumDelayMillis) {
-            base = if (base > maximumDelayMillis / 2) maximumDelayMillis else base * 2
-            remainingDoublings--
+        return scheduleMillis.getOrElse(attempt - 1) { fallbackDelayMillis }
+    }
+
+    private companion object {
+        val DEFAULT_SCHEDULE_MILLIS = buildList {
+            repeat(3) { add(3_000L) }
+            repeat(3) { add(5_000L) }
+            repeat(3) { add(10_000L) }
+            repeat(3) { add(20_000L) }
+            repeat(6) { add(30_000L) }
         }
-        val jitterSpan = (base * jitterRatio).roundToLong()
-        return (base + jitterOffset(jitterSpan)).coerceIn(0, maximumDelayMillis)
     }
 }
 

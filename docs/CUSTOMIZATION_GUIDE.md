@@ -27,6 +27,7 @@
 - セッション: LiveとPast sessionを混在させない。
 - NTRIP: RTCMバイト列を整形、文字列化、再エンコードしない。
 - NTRIP再接続: `NtripSessionController`以外から再接続Jobを起動しない。待機値を変更する場合はStale表示、無受信切断、安定受信によるリセットを別の閾値として検討する。
+- Internet表示: transport名やICMP pingだけでOnlineとせず、`InternetReachabilityPolicy`とAndroidのvalidated capabilityを維持する。default network callbackはApplicationスコープの`AndroidConnectivityMonitor`だけが所有し、Foreground ServiceやActivityへ再登録しない。個別サービスの疎通はNTRIP、SORACOMそれぞれの状態で表す。
 - 過去SP表示: QLMセッションIDまたは移行前データの時間範囲で対応を確認し、最新SP集合をそのまま重ねない。
 - 認証情報: DataStoreへ平文保存せず、ログにも出さない。
 

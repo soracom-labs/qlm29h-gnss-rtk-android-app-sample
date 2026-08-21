@@ -3,6 +3,8 @@ package jp.co.soracom.qlm29hrtk.ui.map
 import jp.co.soracom.qlm29hrtk.AppState
 import jp.co.soracom.qlm29hrtk.AppSmartphoneState
 import jp.co.soracom.qlm29hrtk.AppTrackingState
+import jp.co.soracom.qlm29hrtk.AppConnectivityState
+import jp.co.soracom.qlm29hrtk.network.InternetReachability
 import jp.co.soracom.qlm29hrtk.storage.SmartphoneTrackPointEntity
 import jp.co.soracom.qlm29hrtk.storage.TrackPointEntity
 import org.junit.Assert.assertEquals
@@ -47,6 +49,14 @@ class MapUiStateTest {
         assertTrue(result.smartphoneVisible)
         assertTrue(result.showingPastSession)
         assertEquals("SP 1 points", result.historicalSmartphoneStatus)
+    }
+
+    @Test fun internetProjectionUsesValidatedReachabilityInsteadOfTransportName() {
+        val result = MapUiState.from(
+            AppState(connectivity = AppConnectivityState(InternetReachability.CHECKING)),
+        )
+
+        assertEquals(InternetReachability.CHECKING, result.internet)
     }
 
     private fun qlmPoint(id: Long) = TrackPointEntity(

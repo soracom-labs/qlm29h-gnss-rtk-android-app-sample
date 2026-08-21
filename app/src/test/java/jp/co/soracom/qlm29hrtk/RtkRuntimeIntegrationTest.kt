@@ -1,6 +1,8 @@
 package jp.co.soracom.qlm29hrtk
 
 import jp.co.soracom.qlm29hrtk.service.ForegroundController
+import jp.co.soracom.qlm29hrtk.network.InternetReachability
+import jp.co.soracom.qlm29hrtk.soracom.NetworkTypeProvider
 import jp.co.soracom.qlm29hrtk.usb.FakeSerialTransport
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -45,6 +47,23 @@ class RtkRuntimeIntegrationTest {
         assertEquals(false, runtime.state.value.soracom.enabled)
         assertEquals(SoracomPublicationState.DISABLED, runtime.state.value.soracom.status)
         assertEquals("Connect USB before enabling SORACOM", runtime.state.value.notice.error)
+    }
+
+    @Test fun internetTurnsOnlineOnlyAfterAndroidValidation() {
+        val runtime = RtkRuntime(
+            FakeSerialTransport(),
+            networkTypeProvider = NetworkTypeProvider { "Wi-Fi" },
+        )
+
+        runtime.onNetworkStatusChanged(hasNetwork = true, hasInternetCapability = true, isValidated = false)
+        assertEquals(InternetReachability.CHECKING, runtime.state.value.connectivity.internet)
+        assertEquals("Wi-Fi", runtime.state.value.soracom.networkType)
+
+        runtime.onNetworkStatusChanged(hasNetwork = true, hasInternetCapability = true, isValidated = true)
+        assertEquals(InternetReachability.ONLINE, runtime.state.value.connectivity.internet)
+
+        runtime.onNetworkStatusChanged(hasNetwork = false, hasInternetCapability = false, isValidated = false)
+        assertEquals(InternetReachability.OFFLINE, runtime.state.value.connectivity.internet)
     }
 
     private class RecordingForegroundController : ForegroundController {

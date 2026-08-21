@@ -4,6 +4,7 @@ import jp.co.soracom.qlm29hrtk.AppState
 import jp.co.soracom.qlm29hrtk.storage.SmartphoneTrackPointEntity
 import jp.co.soracom.qlm29hrtk.storage.TrackPointEntity
 import jp.co.soracom.qlm29hrtk.nmea.GgaFix
+import jp.co.soracom.qlm29hrtk.network.InternetReachability
 
 data class MapUiState(
     val points: List<TrackPointEntity>,
@@ -13,7 +14,7 @@ data class MapUiState(
     val historicalSmartphoneStatus: String?,
     val follow: Boolean,
     val usbState: String,
-    val networkType: String,
+    val internet: InternetReachability,
     val ntripState: String,
     val rtcmState: String,
     val soracomEnabled: Boolean,
@@ -38,7 +39,7 @@ data class MapUiState(
                 },
                 follow = state.tracking.follow,
                 usbState = state.usb.connection.label,
-                networkType = state.soracom.networkType,
+                internet = state.connectivity.internet,
                 ntripState = state.ntrip.connection.label,
                 rtcmState = state.ntrip.rtcmState.label,
                 soracomEnabled = state.soracom.enabled,

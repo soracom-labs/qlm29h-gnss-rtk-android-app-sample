@@ -48,6 +48,8 @@ import jp.co.soracom.qlm29hrtk.location.SmartphoneLocationProvider
 import jp.co.soracom.qlm29hrtk.location.SmartphoneTrackRepository
 import jp.co.soracom.qlm29hrtk.location.SmartphoneGnssPolicy
 import jp.co.soracom.qlm29hrtk.location.SmartphoneLocationController
+import jp.co.soracom.qlm29hrtk.network.InternetReachability
+import jp.co.soracom.qlm29hrtk.network.InternetReachabilityPolicy
 import jp.co.soracom.qlm29hrtk.soracom.NetworkTypeProvider
 import jp.co.soracom.qlm29hrtk.soracom.PayloadBuilder
 import jp.co.soracom.qlm29hrtk.soracom.SoracomSender
@@ -482,13 +484,23 @@ class RtkRuntime(
         )
     }
 
-    fun onNetworkAvailable() {
-        updateSoracomState { copy(networkType = networkTypeProvider.current()) }
-        ntripController.onNetworkAvailable()
-    }
-
-    fun onNetworkLost() {
-        updateSoracomState { copy(networkType = networkTypeProvider.current()) }
+    fun onNetworkStatusChanged(
+        hasNetwork: Boolean,
+        hasInternetCapability: Boolean,
+        isValidated: Boolean,
+    ) {
+        val previous = mutableState.value.connectivity.internet
+        val internet = InternetReachabilityPolicy.evaluate(hasNetwork, hasInternetCapability, isValidated)
+        val current = mutableState.value
+        mutableState.value = current.copy(
+            connectivity = current.connectivity.copy(internet = internet),
+            soracom = current.soracom.copy(networkType = networkTypeProvider.current()),
+        )
+        // NET-01/NTRIP-07: wake a pending retry only when Android has validated
+        // the current default network, not merely when a transport appears.
+        if (previous != InternetReachability.ONLINE && internet == InternetReachability.ONLINE) {
+            ntripController.onNetworkAvailable()
+        }
     }
 
     fun fetchSourceTable() {

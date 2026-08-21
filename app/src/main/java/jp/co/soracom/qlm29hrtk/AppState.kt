@@ -5,6 +5,7 @@ import jp.co.soracom.qlm29hrtk.nmea.GgaFix
 import jp.co.soracom.qlm29hrtk.nmea.NmeaType
 import jp.co.soracom.qlm29hrtk.ntrip.MountPoint
 import jp.co.soracom.qlm29hrtk.ntrip.NtripDefaults
+import jp.co.soracom.qlm29hrtk.network.InternetReachability
 import jp.co.soracom.qlm29hrtk.location.TrackRetentionPolicy
 import jp.co.soracom.qlm29hrtk.soracom.SoracomQualityPolicy
 import jp.co.soracom.qlm29hrtk.storage.SessionEntity
@@ -21,6 +22,11 @@ data class AppDisplayState(
 /** Shared storage policy for QLM and SP points; point counts remain in their owning feature states. */
 data class AppStorageState(
     val trackPointLimit: Int = TrackRetentionPolicy.DEFAULT_MAX_POINTS,
+)
+
+/** Default-network reachability is independent from SORACOM publication state. */
+data class AppConnectivityState(
+    val internet: InternetReachability = InternetReachability.OFFLINE,
 )
 
 enum class UsbConnectionState(val label: String) {
@@ -186,4 +192,5 @@ data class AppState(
     val display: AppDisplayState = AppDisplayState(),
     val storage: AppStorageState = AppStorageState(),
     val smartphone: AppSmartphoneState = AppSmartphoneState(),
+    val connectivity: AppConnectivityState = AppConnectivityState(),
 )
