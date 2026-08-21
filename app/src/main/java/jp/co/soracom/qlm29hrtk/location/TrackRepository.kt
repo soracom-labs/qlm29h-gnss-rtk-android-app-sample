@@ -17,11 +17,13 @@ class TrackRepository(private val dao: TrackDao) {
     suspend fun loadSessionPoints(sessionId: String): List<TrackPointEntity> = dao.loadSessionPoints(sessionId)
     private var sessionId: String? = null
     private var lastSavedAt = 0L
+    private var lastSavedUtcSecond: String? = null
     private var maxPoints = TrackRetentionPolicy.DEFAULT_MAX_POINTS
     private var retainedPointCount: Int? = null
     private val mutex = Mutex()
 
     suspend fun startSession(): String = mutex.withLock { startSessionLocked() }
+    suspend fun activeSessionId(): String? = mutex.withLock { sessionId }
 
     private suspend fun startSessionLocked(): String {
         sessionId?.let { return it }
@@ -29,6 +31,7 @@ class TrackRepository(private val dao: TrackDao) {
             dao.insertSession(SessionEntity(id = id, startedAt = System.currentTimeMillis()))
             sessionId = id
             lastSavedAt = 0L
+            lastSavedUtcSecond = null
         }
     }
 
@@ -37,13 +40,15 @@ class TrackRepository(private val dao: TrackDao) {
         dao.endSession(id, System.currentTimeMillis())
         sessionId = null
         lastSavedAt = 0L
+        lastSavedUtcSecond = null
     }
 
     suspend fun record(fix: GgaFix, ntripConnected: Boolean, lastRtcmReceivedAt: String?): Boolean = mutex.withLock {
         val latitude = fix.latitude ?: return false
         val longitude = fix.longitude ?: return false
         val now = System.currentTimeMillis()
-        if (now - lastSavedAt < MAP_INTERVAL_MILLIS) return false
+        val utcSecond = TrackSamplingPolicy.utcSecond(fix.utc)
+        if (!TrackSamplingPolicy.shouldStore(lastSavedUtcSecond, utcSecond, now - lastSavedAt)) return false
         val id = sessionId ?: startSessionLocked()
         dao.insertAndCount(
             TrackPointEntity(
@@ -62,6 +67,7 @@ class TrackRepository(private val dao: TrackDao) {
             ),
         )
         lastSavedAt = now
+        lastSavedUtcSecond = utcSecond
         val count = retainedPointCount?.plus(1) ?: dao.countPoints()
         retainedPointCount = prune(count)
         return true
@@ -94,6 +100,15 @@ class TrackRepository(private val dao: TrackDao) {
     companion object {
         const val MAP_INTERVAL_MILLIS = 1_000L
     }
+}
+
+/** DATA-08: keep one GGA per GNSS UTC second despite sub-second arrival jitter. */
+object TrackSamplingPolicy {
+    fun utcSecond(utc: String): String? =
+        utc.trim().takeIf { it.length >= 6 && it.take(6).all(Char::isDigit) }?.take(6)
+
+    fun shouldStore(previousUtcSecond: String?, currentUtcSecond: String?, elapsedMillis: Long): Boolean =
+        if (currentUtcSecond != null) currentUtcSecond != previousUtcSecond else elapsedMillis >= TrackRepository.MAP_INTERVAL_MILLIS
 }
 
 object TrackRetentionPolicy {

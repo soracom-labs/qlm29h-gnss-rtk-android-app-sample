@@ -16,6 +16,7 @@ data class NtripConfig(
     val tls: Boolean = false,
     val connectTimeoutMillis: Int = 10_000,
     val ggaIntervalMillis: Long = 1_000,
+    val rtcmIdleTimeoutMillis: Long = 30_000,
 ) {
     init {
         require(host.isNotBlank()) { "NTRIP host is required" }
@@ -23,6 +24,7 @@ data class NtripConfig(
         require(mountPoint.isNotBlank()) { "NTRIP mount point is required" }
         require(connectTimeoutMillis > 0) { "NTRIP timeout must be positive" }
         require(ggaIntervalMillis > 0) { "GGA interval must be positive" }
+        require(rtcmIdleTimeoutMillis > 0) { "RTCM idle timeout must be positive" }
     }
 }
 
@@ -41,3 +43,13 @@ sealed interface NtripConnectResult {
     data object Success : NtripConnectResult
     data class Failure(val statusLine: String) : NtripConnectResult
 }
+
+class NtripHttpException(
+    val statusCode: Int?,
+) : java.io.IOException(
+    statusCode?.let { "NTRIP server returned HTTP $it" } ?: "NTRIP server returned an invalid response",
+)
+
+class NtripStreamStalledException(
+    val idleMillis: Long,
+) : java.io.IOException("NTRIP correction stream stopped responding")

@@ -4,6 +4,7 @@ import android.app.Application
 import jp.co.soracom.qlm29hrtk.location.TrackRepository
 import jp.co.soracom.qlm29hrtk.location.AndroidSmartphoneLocationProvider
 import jp.co.soracom.qlm29hrtk.location.SmartphoneTrackRepository
+import jp.co.soracom.qlm29hrtk.network.AndroidConnectivityMonitor
 import jp.co.soracom.qlm29hrtk.service.AndroidForegroundController
 import jp.co.soracom.qlm29hrtk.settings.AndroidSecureCredentialStore
 import jp.co.soracom.qlm29hrtk.settings.AndroidSettingsRepository
@@ -20,6 +21,7 @@ import org.maplibre.android.WellKnownTileServer
 class RtkApplication : Application() {
     lateinit var runtime: RtkRuntime
         private set
+    private lateinit var connectivityMonitor: AndroidConnectivityMonitor
 
     override fun onCreate() {
         super.onCreate()
@@ -41,5 +43,9 @@ class RtkApplication : Application() {
             sessionRawLogStore = rawLogStore,
             sessionLogExporter = QgnssSessionLogExporter(rawLogStore, File(filesDir, "nmea_logs")),
         )
+        connectivityMonitor = AndroidConnectivityMonitor(this) { status ->
+            runtime.onInternetReachabilityChanged(status.internet)
+        }
+        connectivityMonitor.start()
     }
 }

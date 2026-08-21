@@ -20,6 +20,8 @@ class NtripCoreTest {
         assertEquals(NtripConnectResult.Success, NtripResponseParser.classify("ICY 200 OK"))
         assertEquals(NtripConnectResult.Success, NtripResponseParser.classify("HTTP/1.1 200 OK"))
         assertTrue(NtripResponseParser.classify("HTTP/1.1 401 Unauthorized") is NtripConnectResult.Failure)
+        assertEquals(401, NtripResponseParser.statusCode("ICY 401 Unauthorized"))
+        assertEquals(503, NtripResponseParser.statusCode("HTTP/1.1 503 Service Unavailable"))
         assertTrue(NtripResponseParser.isSourceTableSuccess("SOURCETABLE 200 OK"))
     }
 

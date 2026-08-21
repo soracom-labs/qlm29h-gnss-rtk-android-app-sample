@@ -513,13 +513,14 @@ private fun NtripControls(state: NtripSettingsUiState, actions: SettingsActions)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text("NTRIP", style = MaterialTheme.typography.titleMedium)
                 ConnectionSwitch(
-                    checked = state.connection == "Connected",
-                    busy = state.connection in setOf("Connecting", "Reconnecting"),
+                    checked = state.activeSession,
+                    busy = state.busy,
                     offLabel = "Disconnect",
                     onLabel = "Connect",
                     onCheckedChange = { if (it) actions.connectNtrip() else actions.disconnectNtrip() },
                 )
             }
+            Text("Status: ${state.connection}")
             OutlinedTextField(
                 value = state.host,
                 onValueChange = actions::updateNtripHost,
@@ -632,7 +633,9 @@ private fun ConnectionSwitch(
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
-            enabled = !busy,
+            // An active reconnect/wait can always be cancelled by moving the
+            // switch left. Only an inactive transition remains temporarily locked.
+            enabled = !busy || checked,
             colors = SwitchDefaults.colors(
                 checkedTrackColor = MaterialTheme.colorScheme.primary,
                 checkedThumbColor = Color.White,

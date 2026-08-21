@@ -1,5 +1,6 @@
 package jp.co.soracom.qlm29hrtk
 
+import jp.co.soracom.qlm29hrtk.network.InternetReachability
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -28,12 +29,14 @@ class AppStateTest {
 
     @Test fun ntripConnectionStateSeparatesConnectedFromActiveSession() {
         assertFalse(NtripConnectionState.DISCONNECTED.hasActiveSession)
+        assertTrue(NtripConnectionState.WAITING_FOR_GGA.hasActiveSession)
         assertTrue(NtripConnectionState.CONNECTING.hasActiveSession)
         assertTrue(NtripConnectionState.RECONNECTING.hasActiveSession)
         assertTrue(NtripConnectionState.CONNECTED.hasActiveSession)
         assertTrue(NtripConnectionState.CONNECTED.isConnected)
         assertFalse(NtripConnectionState.RECONNECTING.isConnected)
         assertFalse(NtripConnectionState.AUTH_ERROR.hasActiveSession)
+        assertFalse(NtripConnectionState.CONFIGURATION_ERROR.hasActiveSession)
         assertEquals("Auth Error", NtripConnectionState.AUTH_ERROR.label)
     }
 
@@ -69,6 +72,20 @@ class AppStateTest {
         assertEquals(300_000, changed.storage.trackPointLimit)
         assertEquals(42, changed.tracking.pointCount)
         assertEquals(24, changed.smartphone.pointCount)
+    }
+
+    @Test fun connectivityCopyDoesNotReplaceProtocolState() {
+        val initial = AppState(
+            usb = AppUsbState(connection = UsbConnectionState.CONNECTED),
+            ntrip = AppNtripState(connection = NtripConnectionState.CONNECTED),
+        )
+        val changed = initial.copy(
+            connectivity = initial.connectivity.copy(internet = InternetReachability.ONLINE),
+        )
+
+        assertEquals(InternetReachability.ONLINE, changed.connectivity.internet)
+        assertEquals(UsbConnectionState.CONNECTED, changed.usb.connection)
+        assertEquals(NtripConnectionState.CONNECTED, changed.ntrip.connection)
     }
 
     @Test fun usbCopyDoesNotReplaceDisplayOrTrackingState() {
@@ -146,14 +163,16 @@ class AppStateTest {
     }
 
     @Test fun clearingConsoleDoesNotResetProtocolStates() {
+        val event = AppCommunicationEvent("2026-08-21T00:00:00Z", "Internet: Online -> Offline")
         val initial = AppState(
-            diagnostics = AppDiagnosticsState(checksumErrors = 2),
+            diagnostics = AppDiagnosticsState(checksumErrors = 2, communicationEvents = listOf(event)),
             usb = AppUsbState(connection = UsbConnectionState.CONNECTED),
             ntrip = AppNtripState(connection = NtripConnectionState.CONNECTED),
         )
         val changed = initial.copy(diagnostics = initial.diagnostics.copy(console = emptyList()))
 
         assertEquals(2, changed.diagnostics.checksumErrors)
+        assertEquals(listOf(event), changed.diagnostics.communicationEvents)
         assertEquals(UsbConnectionState.CONNECTED, changed.usb.connection)
         assertEquals(NtripConnectionState.CONNECTED, changed.ntrip.connection)
     }

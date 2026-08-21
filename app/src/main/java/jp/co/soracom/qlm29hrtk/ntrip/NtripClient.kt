@@ -58,6 +58,7 @@ class NtripClient : NtripDataSource {
     ): Nothing = withContext(Dispatchers.IO) {
         val socket = createSocket(config)
         try {
+            socket.soTimeout = config.connectTimeoutMillis
             val input = BufferedInputStream(socket.getInputStream())
             val output = socket.getOutputStream()
             output.write(NtripRequestBuilder.stream(config))
@@ -66,11 +67,12 @@ class NtripClient : NtripDataSource {
             val status = response.lineSequence().firstOrNull().orEmpty()
             when (val result = NtripResponseParser.classify(status)) {
                 NtripConnectResult.Success -> Unit
-                is NtripConnectResult.Failure -> error("NTRIP connection failed: ${result.statusLine}")
+                is NtripConnectResult.Failure -> throw NtripHttpException(NtripResponseParser.statusCode(result.statusLine))
             }
             onConnected()
 
             var lastGgaAt = 0L
+            var lastRtcmAt = monotonicMillis()
             val readBuffer = ByteArray(4_096)
             socket.soTimeout = 250
             while (currentCoroutineContext().isActive) {
@@ -83,8 +85,18 @@ class NtripClient : NtripDataSource {
                 try {
                     val count = input.read(readBuffer)
                     if (count < 0) error("NTRIP stream closed")
-                    if (count > 0) onRtcm(readBuffer.copyOf(count))
+                    if (count > 0) {
+                        onRtcm(readBuffer.copyOf(count))
+                        lastRtcmAt = monotonicMillis()
+                    }
                 } catch (_: java.net.SocketTimeoutException) {
+                    val idleMillis = monotonicMillis() - lastRtcmAt
+                    if (idleMillis >= config.rtcmIdleTimeoutMillis) {
+                        // NTRIP-07: a half-open TCP connection is not a usable
+                        // correction session. Surface it to the controller so
+                        // the single owner can close and retry the stream.
+                        throw NtripStreamStalledException(idleMillis)
+                    }
                     delay(1)
                 }
             }
@@ -109,6 +121,8 @@ class NtripClient : NtripDataSource {
         output.write(normalized.toByteArray(Charsets.US_ASCII))
         output.flush()
     }
+
+    private fun monotonicMillis(): Long = System.nanoTime() / 1_000_000
 
     private fun readResponseHeader(input: BufferedInputStream): String {
         val bytes = ArrayList<Byte>(256)

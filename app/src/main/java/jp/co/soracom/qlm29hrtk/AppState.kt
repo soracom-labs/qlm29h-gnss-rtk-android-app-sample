@@ -5,6 +5,7 @@ import jp.co.soracom.qlm29hrtk.nmea.GgaFix
 import jp.co.soracom.qlm29hrtk.nmea.NmeaType
 import jp.co.soracom.qlm29hrtk.ntrip.MountPoint
 import jp.co.soracom.qlm29hrtk.ntrip.NtripDefaults
+import jp.co.soracom.qlm29hrtk.network.InternetReachability
 import jp.co.soracom.qlm29hrtk.location.TrackRetentionPolicy
 import jp.co.soracom.qlm29hrtk.soracom.SoracomQualityPolicy
 import jp.co.soracom.qlm29hrtk.storage.SessionEntity
@@ -21,6 +22,11 @@ data class AppDisplayState(
 /** Shared storage policy for QLM and SP points; point counts remain in their owning feature states. */
 data class AppStorageState(
     val trackPointLimit: Int = TrackRetentionPolicy.DEFAULT_MAX_POINTS,
+)
+
+/** Default-network reachability is independent from SORACOM publication state. */
+data class AppConnectivityState(
+    val internet: InternetReachability = InternetReachability.OFFLINE,
 )
 
 enum class UsbConnectionState(val label: String) {
@@ -47,16 +53,18 @@ data class AppUsbState(
 
 enum class NtripConnectionState(val label: String) {
     DISCONNECTED("Disconnected"),
+    WAITING_FOR_GGA("Waiting for GGA"),
     CONNECTING("Connecting"),
     CONNECTED("Connected"),
     RECONNECTING("Reconnecting"),
     AUTH_ERROR("Auth Error"),
     TLS_ERROR("TLS Error"),
+    CONFIGURATION_ERROR("Config Error"),
     ERROR("Error"),
     ;
 
     val isConnected: Boolean get() = this == CONNECTED
-    val hasActiveSession: Boolean get() = this == CONNECTING || this == CONNECTED || this == RECONNECTING
+    val hasActiveSession: Boolean get() = this == WAITING_FOR_GGA || this == CONNECTING || this == CONNECTED || this == RECONNECTING
 }
 
 enum class RtcmStreamState(val label: String) {
@@ -95,6 +103,8 @@ data class AppNtripState(
     val sourceTableState: SourceTableStatus = SourceTableStatus.Idle,
     val settingsState: SettingsPersistenceState = SettingsPersistenceState.IDLE,
     val reconnectCount: Int = 0,
+    val consecutiveFailureCount: Int = 0,
+    val nextRetryDelaySeconds: Long? = null,
 )
 
 enum class SoracomPublicationState(val label: String) {
@@ -142,6 +152,8 @@ data class AppSmartphoneState(
     val trackVisible: Boolean = true,
     val status: SmartphoneGnssStatus = SmartphoneGnssStatus.DISABLED,
     val points: List<SmartphoneTrackPointEntity> = emptyList(),
+    val selectedSessionPoints: List<SmartphoneTrackPointEntity> = emptyList(),
+    val selectedSessionPointsLoaded: Boolean = false,
     val pointCount: Int = 0,
     val lastLocationAt: String? = null,
     val accuracy: Float? = null,
@@ -158,12 +170,19 @@ data class AppTrackingState(
     val follow: Boolean = true,
 )
 
-/** Bounded raw NMEA console and parser diagnostics for the QLM stream. */
+/** Non-sensitive connectivity history; never include endpoints, credentials or coordinates. */
+data class AppCommunicationEvent(
+    val occurredAt: String,
+    val message: String,
+)
+
+/** Bounded raw NMEA console, parser diagnostics and safe connection events. */
 data class AppDiagnosticsState(
     val console: List<ConsoleEntry> = emptyList(),
     val checksumErrors: Int = 0,
     val ggaParseErrors: Int = 0,
     val sentenceCounts: Map<NmeaType, Long> = emptyMap(),
+    val communicationEvents: List<AppCommunicationEvent> = emptyList(),
 )
 
 /** Transient user-facing notice, kept outside every protocol state. */
@@ -180,4 +199,5 @@ data class AppState(
     val display: AppDisplayState = AppDisplayState(),
     val storage: AppStorageState = AppStorageState(),
     val smartphone: AppSmartphoneState = AppSmartphoneState(),
+    val connectivity: AppConnectivityState = AppConnectivityState(),
 )

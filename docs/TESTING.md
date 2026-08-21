@@ -12,16 +12,22 @@
 
 Lintのerrorはリリース前に0件とする。依存更新、target SDK、アイコン形状など意図的に別工程へ分離したwarningは内容を確認し、無条件にbaselineへ隠さない。
 
+### Instrumentation testを実行する端末
+
+`connectedDebugAndroidTest`はテスト終了時に対象アプリをアンインストールし、アプリ内部のDB、設定、暗号化認証情報、NMEA/RTCM生ログを削除する場合がある。走行データを持つフィールド試験端末では実行せず、データを保持しない専用端末またはエミュレーターだけで実行する。
+
+データ保持端末でRoom migrationを確認する場合は、同じ署名鍵のAPKを`adb install -r`で上書きし、移行前後のDB versionとSession、QLM点、SP点の件数を比較する。アンインストールを伴う試験で暗号化認証情報をファイルコピーから復元することはできないため、ファイルバックアップを代替手段とみなさない。
+
 ## 基本実機試験
 
 1. 既存DBを保持した上書きインストールが成功する。
 2. 起動直後にSmartphone GNSSがDisabledである。
 3. USB権限を許可し、QLM接続とPQTM送信を確認する。
-4. NTRIP接続後にRTCM Receivingとなる。
+4. NTRIP接続後にRTCM Receivingとなる。有効なGGAがない場合はWaiting for GGAとなり、接続を繰り返さない。
 5. USB切断でアプリがクラッシュせず、NTRIPが停止する。
 6. SPをON/OFFしてクラッシュしない。
 7. BackgroundをONにして画面消灯中も取得し、OFF後に通知が不要なら消える。
-8. Past sessionを選択し、全点表示、SP非表示、Return to liveを確認する。
+8. Past sessionを選択し、QLM全点と同一セッションのSPだけが表示され、SP表示切替とReturn to liveが動作することを確認する。移行前SPはセッション時間範囲外の点が混入しないことも確認する。
 9. Mapを縮小し、密集点でも品質色が判別できることを確認する。
 10. ConsoleのShareから`Share current log`が従来形式を共有し、`Share historical log`がSessionsまでスクロールすることを確認する。
 11. 終了済みSessionの`Share logs`からNMEA `.log`を共有し、QGNSS v2.5 Log Playで読み込めることを確認する。NTRIPを使用した新規セッションではRTCM `.log`も同時共有されることを確認する。
@@ -31,6 +37,10 @@ Lintのerrorはリリース前に0件とする。依存更新、target SDK、ア
 15. Track cacheは50,000、100,000、300,000点だけを選択でき、再起動後も設定が保持されることを確認する。上限を増やす場合は直ちに適用され、下げる場合はCancelで元の値を維持し、Confirm後にQLMとSPがそれぞれ新しい上限まで古い点から削除されることを確認する。7日を超えた点が件数上限内なら残ることも確認する。
 16. 最下部のMap、Console、Settingsが隙間のない等幅タブとして表示され、選択中だけSORACOM Celesteの全面下線と薄い背景になることを確認する。文字とアイコンは選択状態で色や太さが変わらないこと、各タブの全面をタップして切り替えられること、Light/Dark themeの双方で選択状態を判別できることを確認する。
 17. SettingsのPOST interval、SORACOM送信品質、Track cache上限で、選択前後にチップ背景が変わらず、選択中だけ2dpのSORACOM Celeste枠線と太字になることを確認する。未選択は1dp枠線と通常ウェイトであり、Light/Dark themeの双方で選択状態を判別できることを確認する。
+18. RTCMを30秒以上停止させ、StaleからReconnectingへ移行し、再接続待機が3秒×3回、5秒×3回、10秒×3回、20秒×3回、30秒×6回、その後60秒ごとになることを確認する。VPNを除く検証済み基礎回線の復旧時は待機中でも再接続し、30秒安定受信後の次回障害が初回の3秒へ戻ることを確認する。Diagnosticsに再試行番号・待機秒数と安定復帰が記録されることも確認する。
+19. VPNを有効にしたまま飛行機モードにし、Wi-FiとCellularがなくなった場合はInternetが灰になることを確認する。基礎回線の`INTERNET` capabilityはあるが未検証の場合は橙、VPNを除く候補が`VALIDATED`取得後だけ緑になることを確認する。DiagnosticsにOfflineとOnlineへの状態変化が記録され、接続先・認証情報・座標が含まれないことも確認する。
+20. DB version 2を保持した上書きインストールでSP点が消えず、移行後に新しいSP点へQLMセッションIDが設定されることを確認する。
+21. 約1HzのGGAを5分以上受信し、Map・Session点が概ね毎UTC秒保存され、受信ジッターによる約2秒周期化が発生しないことを確認する。
 
 ## 車載試験
 

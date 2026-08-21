@@ -17,7 +17,7 @@
 
 - `MAP-01`: QLM29HをSmartphone GNSSより常に優先して追従する。
 - `MAP-02`: SPだけの更新でQLM追従カメラを動かさない。
-- `MAP-03`: Past session表示中はLiveデータへ自動切替しない。対応関係のないSPも重ねない。
+- `MAP-03`: Past session表示中はLiveデータへ自動切替しない。SPはセッションIDまたは移行前データの時間範囲で対応する点だけを重ねる。
 - `SP-01`: Smartphone GNSSはNTRIP、SORACOM、Consoleへ連携しない。
 - `SP-02`: QLMとSPの軌跡、保存、セグメントを混ぜない。
 - `SP-03`: プロセス再生成後のSmartphone GNSSは必ずDisabledから始める。
@@ -25,7 +25,10 @@
 - `FGS-02`: 位置情報権限なしで`location` Foreground Serviceを開始しない。
 - `FGS-03`: 有効なサービス種別がなければForeground Serviceを終了する。
 - `SEC-01`: NTRIP認証情報、Authorizationヘッダー、正確な走行座標をログへ出さない。
+- `SEC-02`: 測位履歴・生ログ・認証情報をAndroidのバックアップ対象にしない。
 - `DATA-01`: Map表示上限とDB保存上限を同一視しない。
+- `NTRIP-07`: RTCM無受信による段階式再接続は`NtripSessionController`だけが所有し、認証・設定エラーを無限再試行しない。
+- `NET-01`: Internet表示はtransport名やVPNの`VALIDATED`だけで緑にせず、VPNを除く検証済みの基礎回線がある場合だけOnlineとする。
 
 ## 変更時のルール
 
@@ -38,6 +41,7 @@
 - `AppState`へ平坦なフィールドを再追加せず、所有する機能別`App*State`へ追加する。ユーザー向け一時エラーは`AppNoticeState`、NMEA解析統計は`AppDiagnosticsState`を使用する。
 - NTRIPとSORACOMのCoroutineをRtkRuntimeから直接起動せず、各Session/Schedule Controllerを唯一のJob所有者にする。
 - USB受信FlowとAndroid LocationProviderをRtkRuntimeから直接登録せず、UsbSessionControllerとSmartphoneLocationControllerを唯一の所有者にする。
+- Internet-capable network callbackはForeground ServiceやActivityへ重複登録せず、ApplicationスコープのAndroidConnectivityMonitorを唯一の所有者にする。
 - 文字列の接続状態は新規追加せず、型付き状態への移行を優先する。
 - 型付き接続状態の`label`は表示境界だけで使用し、Runtimeの分岐ではenum/sealed型そのものを比較する。
 - DBスキーマを変更する場合はRoom migrationと既存DB保持試験を必須とする。

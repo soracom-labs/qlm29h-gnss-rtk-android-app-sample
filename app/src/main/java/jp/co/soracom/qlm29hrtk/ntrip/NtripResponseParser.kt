@@ -14,4 +14,11 @@ object NtripResponseParser {
         return normalized.equals("SOURCETABLE 200 OK", ignoreCase = true) ||
             classify(normalized) == NtripConnectResult.Success
     }
+
+    fun statusCode(statusLine: String): Int? =
+        Regex("^(?:(?:HTTP/\\d(?:\\.\\d)?|ICY)\\s+)?(\\d{3})(?:\\s|$)", RegexOption.IGNORE_CASE)
+            .find(statusLine.trim())
+            ?.groupValues
+            ?.getOrNull(1)
+            ?.toIntOrNull()
 }

@@ -10,6 +10,7 @@ flowchart LR
   RT --> NTRIP["NtripSessionController"]
   RT --> SORACOM["SoracomScheduleController"]
   RT --> SP["SmartphoneLocationController"]
+  NET["AndroidConnectivityMonitor"] --> RT
   RT --> REPO["Track repositories"]
   RT --> RAW["SessionRawLogStore"]
   REPO --> ROOM["Room DB"]
@@ -38,20 +39,28 @@ Mapは`MapUiState.from(AppState)`で必要な状態だけを投影し、`MapActi
 
 長寿命Coroutineの所有者も分離している。`UsbSessionController`はUSB受信Job、`NtripSessionController`は単一ストリーム・再接続待機・キャンセル、`SoracomScheduleController`は定期送信タイマーを所有する。`SmartphoneLocationController`はLocationProvider登録を所有し、重複start/stopを防ぐ。`RtkRuntime`は結果を`AppState`へ反映するが、Controller内部のJobや登録状態を直接操作しない。
 
+NTRIPの無受信監視は`NtripClient`が半開きソケットを例外として表面化し、`NtripSessionController`が唯一のJob所有者として3、5、10、20、30、60秒の段階式再接続とネットワーク復旧時の待機解除を処理する。`RtkRuntime`の10秒監視は表示上のStale判定だけを担当し、別の再接続Jobを起動しない。接続成功だけでは失敗回数を戻さず、30秒のRTCM安定受信を回復境界とする。
+
+Applicationスコープの`AndroidConnectivityMonitor`をInternet-capable network callbackの唯一の所有者とする。per-app VPNは基礎回線消失後も`VALIDATED`を維持する場合があるため、callbackで得た候補を`InternetReachabilityPolicy`へ渡し、VPNを除く候補だけでOffline、Checking、Onlineを決定する。Foreground Serviceの稼働有無へ監視を依存させず、ICMP到達性も定期監視に使わない。検証済み基礎回線がOnlineへ遷移した場合だけNTRIPの待機を解除し、Wi-Fi、Cellular、VPNの種別はSORACOM送信診断として別に保持する。
+
+Internet状態変化とNTRIP再試行番号・待機秒数は`AppDiagnosticsState.communicationEvents`へ最大20件のリングとして保持する。Settingsでは新しい10件を表示する。この履歴は接続先、例外本文、認証情報、測位値、NMEA/RTCM内容を記録せず、通信回復の順序だけを実機確認できる境界とする。
+
 ## データフロー
 
 QLMは `USB → SessionRawLogStore → NMEA framing/checksum → GGA parsing → TrackRepository` の順に保存される。同じ最新GGAがNTRIPとSORACOMで利用される。RTCMは `NTRIP → SessionRawLogStore → inspector → USB` であり、内容を改変しない。
 
 `SessionRawLogStore`はUSBセッションIDごとのディレクトリへNMEA RXとRTCM RXを別々に保存する。構造化されたTrackPointは高速なMap表示用、生ログは外部リプレイと将来の再解析用であり、片方からもう片方を完全再構成できるとはみなさない。QGNSS向け共有ファイルへアプリの時刻やRX/TXラベルを混ぜない。導入前のセッションだけは`rawGga`からGGA-onlyログを生成する。
 
+Room DB、DataStore、暗号化済みNTRIP認証情報、NMEA/RTCM生ログはいずれも正確な行動履歴または接続情報を含み得るため、Androidのクラウドバックアップと端末間バックアップを無効にする。必要なセッションログの端末外保存は、ユーザーが明示的にShareを実行した場合だけ行う。
+
 TrackPointの保存上限は`AppStorageState`とDataStoreへ保持し、QLMとSPの各Repositoryへ同じ選択値を独立に適用する。保持は件数だけで制御し、経過日数では削除しない。上限変更時の即時trimと新規保存時のtrimはRepositoryが担当し、生NMEA/RTCMログには適用しない。
 
-SPは `Android GPS Provider → AppSmartphoneState / SmartphoneTrackRepository → SP Map layer` の閉じた経路である。QLM経路へ合流させてはならない（`SP-01`, `SP-02`）。
+SPは `Android GPS Provider → AppSmartphoneState / SmartphoneTrackRepository → SP Map layer` の閉じた経路である。保存時に現在のQLMセッションIDを表示上の対応情報として持てるが、測位値はQLM経路へ合流させてはならない（`SP-01`, `SP-02`, `SP-06`）。
 
 ## Mapの表示モデル
 
 - Live: `AppTrackingState.livePoints`と最新SP集合。
-- Past session: `AppTrackingState.selectedSessionPoints`の全点。SPは非表示。
+- Past session: `AppTrackingState.selectedSessionPoints`の全点と、同一セッションへ関連付けた`AppSmartphoneState.selectedSessionPoints`。移行前のSP点だけはセッション時間範囲で照合する。
 - Viewport判断は`MapViewportPolicy`へ集約し、MapLibreなしで試験する。
 - レイヤー再描画キャッシュは`MapRenderState`が保持する。
 

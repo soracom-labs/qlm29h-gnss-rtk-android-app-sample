@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import jp.co.soracom.qlm29hrtk.network.InternetReachability
 
 /** Live and past-session map shell. The actual MapLibre lifecycle stays in TrackMap. */
 @Composable
@@ -43,7 +44,10 @@ fun MapScreen(state: MapUiState, actions: MapActions) {
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("Past session · ${state.points.size} points", style = MaterialTheme.typography.labelMedium)
+                        Text(
+                            "Past session · ${state.points.size} points · ${state.historicalSmartphoneStatus.orEmpty()}",
+                            style = MaterialTheme.typography.labelMedium,
+                        )
                         TextButton(onClick = actions.onReturnToLive) { Text("Return to live") }
                     }
                 }
@@ -53,8 +57,7 @@ fun MapScreen(state: MapUiState, actions: MapActions) {
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 StatusPill("USB", state.usbState, state.usbState == "Connected")
-                val internetConnected = state.networkType !in setOf("Unknown", "None", "Offline")
-                StatusPill("Internet", state.networkType, internetConnected)
+                StatusPill("Internet", state.internet.label, state.internet == InternetReachability.ONLINE)
                 val ntripValue = if (state.ntripState == "Connected" && state.rtcmState != "Receiving") "Waiting" else state.ntripState
                 StatusPill("NTRIP", ntripValue, state.ntripState == "Connected" && state.rtcmState == "Receiving")
                 val soracomOk = state.soracomEnabled && state.lastSoracomHttpStatus in 200..299
@@ -88,11 +91,11 @@ fun MapScreen(state: MapUiState, actions: MapActions) {
 
 @Composable
 private fun StatusPill(label: String, value: String, connected: Boolean) {
-    val transitional = value in setOf("Connecting", "Reconnecting", "Sending", "Waiting")
+    val transitional = value in setOf("Checking", "Connecting", "Reconnecting", "Sending", "Waiting", "Waiting for GGA")
     val color = when {
         connected -> Color(0xFF2E7D32)
         transitional -> Color(0xFFF9A825)
-        value in setOf("Error", "Auth Error", "TLS Error") -> Color(0xFFC62828)
+        value in setOf("Error", "Auth Error", "TLS Error", "Config Error") -> Color(0xFFC62828)
         else -> Color(0xFF616161)
     }
     Surface(color = color.copy(alpha = 0.88f), contentColor = Color.White, shape = MaterialTheme.shapes.small) {

@@ -20,8 +20,23 @@ fun DiagnosticsCard(state: DiagnosticsUiState) {
             Text("USB RX last: ${state.lastUsbReceivedAt ?: "-"}")
             Text("USB TX last: ${state.lastUsbTransmittedAt ?: "-"}")
             Text("Checksum errors: ${state.checksumErrors} · GGA parse errors: ${state.ggaParseErrors}")
-            Text("NTRIP reconnects: ${state.ntripReconnectCount}")
+            Text(
+                "NTRIP reconnects: ${state.ntripReconnectCount}" +
+                    if (state.ntripConsecutiveFailureCount > 0) {
+                        " · consecutive: ${state.ntripConsecutiveFailureCount}" +
+                            state.ntripNextRetryDelaySeconds?.let { " · next: ${it}s" }.orEmpty()
+                    } else "",
+            )
             Text("SORACOM success: ${state.soracomSuccessCount} · failed: ${state.soracomFailureCount}")
+            if (state.communicationEvents.isNotEmpty()) {
+                Text("Recent connection events", style = MaterialTheme.typography.titleSmall)
+                state.communicationEvents.takeLast(10).asReversed().forEach { event ->
+                    Text(
+                        "${event.occurredAt} · ${event.message}",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
             Text(
                 NmeaType.entries.joinToString(" · ") { "${it.name} ${state.sentenceCounts[it] ?: 0}" },
                 style = MaterialTheme.typography.bodySmall,

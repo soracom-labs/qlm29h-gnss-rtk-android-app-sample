@@ -8,6 +8,8 @@ import jp.co.soracom.qlm29hrtk.soracom.SoracomQualityPolicy
 import jp.co.soracom.qlm29hrtk.storage.SessionEntity
 import jp.co.soracom.qlm29hrtk.usb.UsbSerialDevice
 import jp.co.soracom.qlm29hrtk.UsbConnectionState
+import jp.co.soracom.qlm29hrtk.NtripConnectionState
+import jp.co.soracom.qlm29hrtk.AppCommunicationEvent
 
 data class DisplaySettingsUiState(val darkTheme: Boolean, val keepScreenOn: Boolean)
 data class SmartphoneSettingsUiState(
@@ -31,6 +33,8 @@ data class NtripSettingsUiState(
     val username: String,
     val password: String,
     val connection: String,
+    val activeSession: Boolean,
+    val busy: Boolean,
     val rtcmBytes: Long,
     val lastRtcmMessage: String?,
     val rtcmState: String,
@@ -65,9 +69,12 @@ data class DiagnosticsUiState(
     val checksumErrors: Int,
     val ggaParseErrors: Int,
     val ntripReconnectCount: Int,
+    val ntripConsecutiveFailureCount: Int,
+    val ntripNextRetryDelaySeconds: Long?,
     val soracomSuccessCount: Int,
     val soracomFailureCount: Int,
     val sentenceCounts: Map<NmeaType, Long>,
+    val communicationEvents: List<AppCommunicationEvent>,
 )
 
 data class SettingsUiState(
@@ -92,7 +99,14 @@ data class SettingsUiState(
             usb = UsbSettingsUiState(state.usb.connection.label, state.usb.autoConnect, state.usb.devices, state.usb.selectedDeviceId),
             ntrip = NtripSettingsUiState(
                 state.ntrip.host, state.ntrip.port, state.ntrip.mountPoint, state.ntrip.username, state.ntrip.password,
-                state.ntrip.connection.label, state.ntrip.rtcmBytes, state.ntrip.lastRtcmMessage, state.ntrip.rtcmState.label,
+                state.ntrip.connection.label,
+                state.ntrip.connection.hasActiveSession,
+                state.ntrip.connection in setOf(
+                    NtripConnectionState.WAITING_FOR_GGA,
+                    NtripConnectionState.CONNECTING,
+                    NtripConnectionState.RECONNECTING,
+                ),
+                state.ntrip.rtcmBytes, state.ntrip.lastRtcmMessage, state.ntrip.rtcmState.label,
                 state.ntrip.lastRtcmReceivedAt, state.ntrip.settingsState.label, state.ntrip.sourceTableState.label, state.ntrip.mountPoints,
             ),
             soracom = SoracomSettingsUiState(
@@ -110,8 +124,10 @@ data class SettingsUiState(
             diagnostics = DiagnosticsUiState(
                 state.usb.lastReceivedAt, state.usb.lastTransmittedAt,
                 state.diagnostics.checksumErrors, state.diagnostics.ggaParseErrors,
-                state.ntrip.reconnectCount, state.soracom.successCount, state.soracom.failureCount,
+                state.ntrip.reconnectCount, state.ntrip.consecutiveFailureCount, state.ntrip.nextRetryDelaySeconds,
+                state.soracom.successCount, state.soracom.failureCount,
                 state.diagnostics.sentenceCounts,
+                state.diagnostics.communicationEvents,
             ),
         )
     }

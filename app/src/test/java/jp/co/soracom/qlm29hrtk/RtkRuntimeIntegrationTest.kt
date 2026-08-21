@@ -1,6 +1,8 @@
 package jp.co.soracom.qlm29hrtk
 
 import jp.co.soracom.qlm29hrtk.service.ForegroundController
+import jp.co.soracom.qlm29hrtk.network.InternetReachability
+import jp.co.soracom.qlm29hrtk.soracom.NetworkTypeProvider
 import jp.co.soracom.qlm29hrtk.usb.FakeSerialTransport
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -45,6 +47,45 @@ class RtkRuntimeIntegrationTest {
         assertEquals(false, runtime.state.value.soracom.enabled)
         assertEquals(SoracomPublicationState.DISABLED, runtime.state.value.soracom.status)
         assertEquals("Connect USB before enabling SORACOM", runtime.state.value.notice.error)
+    }
+
+    @Test fun internetTurnsOnlineOnlyAfterAndroidValidation() {
+        val runtime = RtkRuntime(
+            FakeSerialTransport(),
+            networkTypeProvider = NetworkTypeProvider { "Wi-Fi" },
+        )
+
+        runtime.onInternetReachabilityChanged(InternetReachability.CHECKING)
+        assertEquals(InternetReachability.CHECKING, runtime.state.value.connectivity.internet)
+        assertEquals("Wi-Fi", runtime.state.value.soracom.networkType)
+
+        runtime.onInternetReachabilityChanged(InternetReachability.ONLINE)
+        assertEquals(InternetReachability.ONLINE, runtime.state.value.connectivity.internet)
+
+        runtime.onInternetReachabilityChanged(InternetReachability.OFFLINE)
+        assertEquals(InternetReachability.OFFLINE, runtime.state.value.connectivity.internet)
+        assertEquals(
+            listOf(
+                "Internet: Offline -> Checking",
+                "Internet: Checking -> Online",
+                "Internet: Online -> Offline",
+            ),
+            runtime.state.value.diagnostics.communicationEvents.map { it.message },
+        )
+    }
+
+    @Test fun communicationEventHistoryIsBoundedAndIgnoresDuplicateInternetState() {
+        val runtime = RtkRuntime(FakeSerialTransport())
+
+        repeat(12) {
+            runtime.onInternetReachabilityChanged(InternetReachability.ONLINE)
+            runtime.onInternetReachabilityChanged(InternetReachability.OFFLINE)
+        }
+        runtime.onInternetReachabilityChanged(InternetReachability.OFFLINE)
+
+        assertEquals(20, runtime.state.value.diagnostics.communicationEvents.size)
+        assertEquals("Internet: Offline -> Online", runtime.state.value.diagnostics.communicationEvents.first().message)
+        assertEquals("Internet: Online -> Offline", runtime.state.value.diagnostics.communicationEvents.last().message)
     }
 
     private class RecordingForegroundController : ForegroundController {
