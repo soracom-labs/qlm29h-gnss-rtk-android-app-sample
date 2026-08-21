@@ -41,7 +41,9 @@ Mapは`MapUiState.from(AppState)`で必要な状態だけを投影し、`MapActi
 
 NTRIPの無受信監視は`NtripClient`が半開きソケットを例外として表面化し、`NtripSessionController`が唯一のJob所有者として3、5、10、20、30、60秒の段階式再接続とネットワーク復旧時の待機解除を処理する。`RtkRuntime`の10秒監視は表示上のStale判定だけを担当し、別の再接続Jobを起動しない。接続成功だけでは失敗回数を戻さず、30秒のRTCM安定受信を回復境界とする。
 
-Applicationスコープの`AndroidConnectivityMonitor`をdefault network callbackの唯一の所有者とする。Internet表示は`ConnectivityManager`のtransport名ではなく、default networkの`INTERNET`と`VALIDATED` capabilityを`InternetReachabilityPolicy`へ渡して決定する。Foreground Serviceの稼働有無へ監視を依存させず、ICMP到達性も定期監視に使わない。OSが検証したOnlineへの遷移だけでNTRIPの待機を解除し、Wi-Fi、Cellular、VPNの種別はSORACOM送信診断として別に保持する。
+Applicationスコープの`AndroidConnectivityMonitor`をInternet-capable network callbackの唯一の所有者とする。per-app VPNは基礎回線消失後も`VALIDATED`を維持する場合があるため、callbackで得た候補を`InternetReachabilityPolicy`へ渡し、VPNを除く候補だけでOffline、Checking、Onlineを決定する。Foreground Serviceの稼働有無へ監視を依存させず、ICMP到達性も定期監視に使わない。検証済み基礎回線がOnlineへ遷移した場合だけNTRIPの待機を解除し、Wi-Fi、Cellular、VPNの種別はSORACOM送信診断として別に保持する。
+
+Internet状態変化とNTRIP再試行番号・待機秒数は`AppDiagnosticsState.communicationEvents`へ最大20件のリングとして保持する。Settingsでは新しい10件を表示する。この履歴は接続先、例外本文、認証情報、測位値、NMEA/RTCM内容を記録せず、通信回復の順序だけを実機確認できる境界とする。
 
 ## データフロー
 

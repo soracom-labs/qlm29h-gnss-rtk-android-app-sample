@@ -49,7 +49,6 @@ import jp.co.soracom.qlm29hrtk.location.SmartphoneTrackRepository
 import jp.co.soracom.qlm29hrtk.location.SmartphoneGnssPolicy
 import jp.co.soracom.qlm29hrtk.location.SmartphoneLocationController
 import jp.co.soracom.qlm29hrtk.network.InternetReachability
-import jp.co.soracom.qlm29hrtk.network.InternetReachabilityPolicy
 import jp.co.soracom.qlm29hrtk.soracom.NetworkTypeProvider
 import jp.co.soracom.qlm29hrtk.soracom.PayloadBuilder
 import jp.co.soracom.qlm29hrtk.soracom.SoracomSender
@@ -484,20 +483,23 @@ class RtkRuntime(
         )
     }
 
-    fun onNetworkStatusChanged(
-        hasNetwork: Boolean,
-        hasInternetCapability: Boolean,
-        isValidated: Boolean,
-    ) {
+    fun onInternetReachabilityChanged(internet: InternetReachability) {
         val previous = mutableState.value.connectivity.internet
-        val internet = InternetReachabilityPolicy.evaluate(hasNetwork, hasInternetCapability, isValidated)
         val current = mutableState.value
+        val diagnostics = if (previous == internet) {
+            current.diagnostics
+        } else {
+            current.diagnostics.withCommunicationEvent(
+                message = "Internet: ${previous.label} -> ${internet.label}",
+            )
+        }
         mutableState.value = current.copy(
             connectivity = current.connectivity.copy(internet = internet),
             soracom = current.soracom.copy(networkType = networkTypeProvider.current()),
+            diagnostics = diagnostics,
         )
         // NET-01/NTRIP-07: wake a pending retry only when Android has validated
-        // the current default network, not merely when a transport appears.
+        // a non-VPN Internet underlay, not merely when the VPN remains present.
         if (previous != InternetReachability.ONLINE && internet == InternetReachability.ONLINE) {
             ntripController.onNetworkAvailable()
         }
@@ -602,7 +604,11 @@ class RtkRuntime(
             NtripSessionEvent.Connecting -> current.copy(ntrip = current.ntrip.copy(connection = NtripConnectionState.CONNECTING, nextRetryDelaySeconds = null), notice = AppNoticeState())
             NtripSessionEvent.WaitingForGga -> current.copy(ntrip = current.ntrip.copy(connection = NtripConnectionState.WAITING_FOR_GGA, rtcmState = RtcmStreamState.NONE), notice = AppNoticeState())
             NtripSessionEvent.Connected -> current.copy(ntrip = current.ntrip.copy(connection = NtripConnectionState.CONNECTED, nextRetryDelaySeconds = null), notice = AppNoticeState())
-            NtripSessionEvent.Stable -> current.copy(ntrip = current.ntrip.copy(consecutiveFailureCount = 0, nextRetryDelaySeconds = null), notice = AppNoticeState())
+            NtripSessionEvent.Stable -> current.copy(
+                ntrip = current.ntrip.copy(consecutiveFailureCount = 0, nextRetryDelaySeconds = null),
+                diagnostics = current.diagnostics.withCommunicationEvent("NTRIP: stable RTCM reception"),
+                notice = AppNoticeState(),
+            )
             NtripSessionEvent.Disconnected -> current.copy(ntrip = current.ntrip.copy(connection = NtripConnectionState.DISCONNECTED, rtcmState = RtcmStreamState.NONE))
             is NtripSessionEvent.AuthError -> current.copy(ntrip = current.ntrip.copy(connection = NtripConnectionState.AUTH_ERROR), notice = AppNoticeState(event.message))
             is NtripSessionEvent.TlsError -> current.copy(ntrip = current.ntrip.copy(connection = NtripConnectionState.TLS_ERROR), notice = AppNoticeState(event.message))
@@ -614,6 +620,9 @@ class RtkRuntime(
                     reconnectCount = current.ntrip.reconnectCount + 1,
                     consecutiveFailureCount = event.attempt,
                     nextRetryDelaySeconds = (event.delayMillis + 999) / 1_000,
+                ),
+                diagnostics = current.diagnostics.withCommunicationEvent(
+                    "NTRIP retry #${event.attempt} in ${(event.delayMillis + 999) / 1_000}s",
                 ),
                 notice = AppNoticeState(),
             )
@@ -891,3 +900,10 @@ class RtkRuntime(
         runtimeScope.cancel()
     }
 }
+
+private const val COMMUNICATION_EVENT_LIMIT = 20
+
+private fun AppDiagnosticsState.withCommunicationEvent(message: String): AppDiagnosticsState = copy(
+    communicationEvents = (communicationEvents + AppCommunicationEvent(Instant.now().toString(), message))
+        .takeLast(COMMUNICATION_EVENT_LIMIT),
+)

@@ -55,15 +55,37 @@ class RtkRuntimeIntegrationTest {
             networkTypeProvider = NetworkTypeProvider { "Wi-Fi" },
         )
 
-        runtime.onNetworkStatusChanged(hasNetwork = true, hasInternetCapability = true, isValidated = false)
+        runtime.onInternetReachabilityChanged(InternetReachability.CHECKING)
         assertEquals(InternetReachability.CHECKING, runtime.state.value.connectivity.internet)
         assertEquals("Wi-Fi", runtime.state.value.soracom.networkType)
 
-        runtime.onNetworkStatusChanged(hasNetwork = true, hasInternetCapability = true, isValidated = true)
+        runtime.onInternetReachabilityChanged(InternetReachability.ONLINE)
         assertEquals(InternetReachability.ONLINE, runtime.state.value.connectivity.internet)
 
-        runtime.onNetworkStatusChanged(hasNetwork = false, hasInternetCapability = false, isValidated = false)
+        runtime.onInternetReachabilityChanged(InternetReachability.OFFLINE)
         assertEquals(InternetReachability.OFFLINE, runtime.state.value.connectivity.internet)
+        assertEquals(
+            listOf(
+                "Internet: Offline -> Checking",
+                "Internet: Checking -> Online",
+                "Internet: Online -> Offline",
+            ),
+            runtime.state.value.diagnostics.communicationEvents.map { it.message },
+        )
+    }
+
+    @Test fun communicationEventHistoryIsBoundedAndIgnoresDuplicateInternetState() {
+        val runtime = RtkRuntime(FakeSerialTransport())
+
+        repeat(12) {
+            runtime.onInternetReachabilityChanged(InternetReachability.ONLINE)
+            runtime.onInternetReachabilityChanged(InternetReachability.OFFLINE)
+        }
+        runtime.onInternetReachabilityChanged(InternetReachability.OFFLINE)
+
+        assertEquals(20, runtime.state.value.diagnostics.communicationEvents.size)
+        assertEquals("Internet: Offline -> Online", runtime.state.value.diagnostics.communicationEvents.first().message)
+        assertEquals("Internet: Online -> Offline", runtime.state.value.diagnostics.communicationEvents.last().message)
     }
 
     private class RecordingForegroundController : ForegroundController {

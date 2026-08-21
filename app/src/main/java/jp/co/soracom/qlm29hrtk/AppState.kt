@@ -170,12 +170,19 @@ data class AppTrackingState(
     val follow: Boolean = true,
 )
 
-/** Bounded raw NMEA console and parser diagnostics for the QLM stream. */
+/** Non-sensitive connectivity history; never include endpoints, credentials or coordinates. */
+data class AppCommunicationEvent(
+    val occurredAt: String,
+    val message: String,
+)
+
+/** Bounded raw NMEA console, parser diagnostics and safe connection events. */
 data class AppDiagnosticsState(
     val console: List<ConsoleEntry> = emptyList(),
     val checksumErrors: Int = 0,
     val ggaParseErrors: Int = 0,
     val sentenceCounts: Map<NmeaType, Long> = emptyMap(),
+    val communicationEvents: List<AppCommunicationEvent> = emptyList(),
 )
 
 /** Transient user-facing notice, kept outside every protocol state. */

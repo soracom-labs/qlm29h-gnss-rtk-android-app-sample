@@ -42,7 +42,7 @@ DBに行きと帰りの両セッションが残っていても、最新2,000点�
 
 再接続や設定変更のたびに複数のNTRIPストリーム、SORACOMタイマーが残ると、RTCMやPOSTが重複する。各Controllerが常に直前のJobをキャンセルしてから新しいJobを開始する。RtkRuntimeは開始条件とUI状態の反映だけを担当する。
 
-認証エラーとTLSエラーは自動再試行せず、一時的なネットワーク障害だけを5秒後に再試行する。キャンセルは失敗件数や再接続回数へ数えない。
+認証エラーとTLSエラーは自動再試行せず、一時的なネットワーク障害だけを`NTRIP-07`の段階式間隔で再試行する。キャンセルは失敗件数や再接続回数へ数えない。
 
 関連要件: `NTRIP-03`, `SORACOM-01`
 
@@ -158,6 +158,10 @@ TCPがConnectedでもRTCMが届かなければRTK補正には利用できない�
 
 Wi-Fi、Cellular、VPNのtransportが存在しても、上流切断、キャプティブポータル、VPN経路不全などで外部通信できない場合がある。一方、1.1.1.1や8.8.8.8へのICMPは、NTRIPやHTTPSが利用可能でもキャリア、VPN、Firewallの方針で遮断され得る。IPへのping成功もDNSや目的サービスの到達性を保証しない。
 
-そのためMapのInternet表示はAndroidがdefault networkへ付与する`NET_CAPABILITY_INTERNET`と`NET_CAPABILITY_VALIDATED`を使用する。経路あり・未検証はCheckingとして橙、検証済みだけOnlineとして緑、経路なしはOfflineとして灰にする。NTRIPとSORACOMは各サービス自身の状態を別のピルで示し、一般Internet表示をサービス疎通の保証として扱わない。
+Android 15実機の飛行機モード試験では、Wi-FiとCellularが消失してもアプリへ適用されたSORACOM ArcのVPNが残り、VPN自身の`VALIDATED`も維持した。このためdefault networkだけを見る方式ではInternetが緑のままとなり、NTRIP復旧時にも待機を即時解除できなかった。
 
-関連要件: `NET-01`, `NTRIP-07`
+そのためMapのInternet表示はInternet-capable network callbackで候補を監視し、VPNを除く候補の`NET_CAPABILITY_INTERNET`と`NET_CAPABILITY_VALIDATED`を使用する。基礎回線あり・未検証はCheckingとして橙、検証済み基礎回線だけOnlineとして緑、VPN以外の候補なしはOfflineとして灰にする。NTRIPとSORACOMは各サービス自身の状態を別のピルで示し、一般Internet表示をサービス疎通の保証として扱わない。
+
+次回試験で遷移順を検証できるよう、Internet状態変化とNTRIP再試行番号・待機秒数だけを最大20件のメモリ内診断履歴へ残す。接続先や例外本文を記録せず、`SEC-01`を維持する。
+
+関連要件: `NET-01`, `NET-02`, `NTRIP-07`, `SEC-01`

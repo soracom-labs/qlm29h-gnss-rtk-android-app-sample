@@ -13,6 +13,7 @@ import jp.co.soracom.qlm29hrtk.UsbConnectionState
 import jp.co.soracom.qlm29hrtk.NtripConnectionState
 import jp.co.soracom.qlm29hrtk.SmartphoneGnssStatus
 import jp.co.soracom.qlm29hrtk.SoracomPublicationState
+import jp.co.soracom.qlm29hrtk.AppCommunicationEvent
 import jp.co.soracom.qlm29hrtk.nmea.NmeaType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -64,6 +65,9 @@ class SettingsUiStateTest {
                     checksumErrors = 2,
                     ggaParseErrors = 3,
                     sentenceCounts = mapOf(NmeaType.GGA to 7L),
+                    communicationEvents = listOf(
+                        AppCommunicationEvent("2026-08-21T00:00:00Z", "NTRIP retry #1 in 3s"),
+                    ),
                 ),
                 ntrip = AppNtripState(reconnectCount = 4, consecutiveFailureCount = 2, nextRetryDelaySeconds = 4),
                 soracom = AppSoracomState(successCount = 5, failureCount = 6),
@@ -78,5 +82,6 @@ class SettingsUiStateTest {
         assertEquals(5, result.diagnostics.soracomSuccessCount)
         assertEquals(6, result.diagnostics.soracomFailureCount)
         assertEquals(7L, result.diagnostics.sentenceCounts[NmeaType.GGA])
+        assertEquals("NTRIP retry #1 in 3s", result.diagnostics.communicationEvents.single().message)
     }
 }

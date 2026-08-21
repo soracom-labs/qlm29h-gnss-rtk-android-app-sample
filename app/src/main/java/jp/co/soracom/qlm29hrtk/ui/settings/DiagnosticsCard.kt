@@ -28,6 +28,15 @@ fun DiagnosticsCard(state: DiagnosticsUiState) {
                     } else "",
             )
             Text("SORACOM success: ${state.soracomSuccessCount} · failed: ${state.soracomFailureCount}")
+            if (state.communicationEvents.isNotEmpty()) {
+                Text("Recent connection events", style = MaterialTheme.typography.titleSmall)
+                state.communicationEvents.takeLast(10).asReversed().forEach { event ->
+                    Text(
+                        "${event.occurredAt} · ${event.message}",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
             Text(
                 NmeaType.entries.joinToString(" · ") { "${it.name} ${state.sentenceCounts[it] ?: 0}" },
                 style = MaterialTheme.typography.bodySmall,

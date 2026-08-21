@@ -44,11 +44,7 @@ class RtkApplication : Application() {
             sessionLogExporter = QgnssSessionLogExporter(rawLogStore, File(filesDir, "nmea_logs")),
         )
         connectivityMonitor = AndroidConnectivityMonitor(this) { status ->
-            runtime.onNetworkStatusChanged(
-                hasNetwork = status.hasNetwork,
-                hasInternetCapability = status.hasInternetCapability,
-                isValidated = status.isValidated,
-            )
+            runtime.onInternetReachabilityChanged(status.internet)
         }
         connectivityMonitor.start()
     }

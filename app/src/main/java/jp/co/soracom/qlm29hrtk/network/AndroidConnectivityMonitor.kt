@@ -4,41 +4,63 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
+import android.net.NetworkRequest
+import android.os.Handler
+import android.os.Looper
 
 data class AndroidNetworkStatus(
-    val hasNetwork: Boolean,
-    val hasInternetCapability: Boolean,
-    val isValidated: Boolean,
+    val internet: InternetReachability,
 )
 
-/** Application-scoped owner of the single default-network callback. */
+/** Application-scoped owner of the single Internet-capable network callback. */
 class AndroidConnectivityMonitor(
     context: Context,
     private val onStatusChanged: (AndroidNetworkStatus) -> Unit,
 ) {
     private val manager = context.applicationContext.getSystemService(ConnectivityManager::class.java)
+    private val callbackHandler = Handler(Looper.getMainLooper())
+    private val request = NetworkRequest.Builder()
+        .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        .build()
+    private val candidates = mutableMapOf<Network, InternetNetworkCandidate>()
     private var started = false
     private val callback = object : ConnectivityManager.NetworkCallback() {
-        override fun onAvailable(network: Network) = reportCurrent()
-        override fun onCapabilitiesChanged(network: Network, capabilities: NetworkCapabilities) = reportCurrent()
-        override fun onLost(network: Network) = reportCurrent()
+        override fun onAvailable(network: Network) {
+            manager.getNetworkCapabilities(network)?.let { update(network, it) }
+        }
+
+        override fun onCapabilitiesChanged(network: Network, capabilities: NetworkCapabilities) {
+            update(network, capabilities)
+        }
+
+        override fun onLost(network: Network) {
+            candidates.remove(network)
+            reportCurrent()
+        }
     }
 
     fun start() {
         if (started) return
         started = true
-        manager.registerDefaultNetworkCallback(callback)
+        // NET-01: observe every Internet candidate. A per-app VPN can remain
+        // VALIDATED after all of its Wi-Fi/Cellular underlays have disappeared.
+        manager.registerNetworkCallback(request, callback, callbackHandler)
+        reportCurrent()
+    }
+
+    private fun update(network: Network, capabilities: NetworkCapabilities) {
+        candidates[network] = InternetNetworkCandidate(
+            isVpn = capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN),
+            hasInternetCapability = capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET),
+            isValidated = capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED),
+        )
         reportCurrent()
     }
 
     private fun reportCurrent() {
-        val activeNetwork = manager.activeNetwork
-        val capabilities = activeNetwork?.let(manager::getNetworkCapabilities)
         onStatusChanged(
             AndroidNetworkStatus(
-                hasNetwork = activeNetwork != null,
-                hasInternetCapability = capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true,
-                isValidated = capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true,
+                internet = InternetReachabilityPolicy.evaluate(candidates.values),
             ),
         )
     }

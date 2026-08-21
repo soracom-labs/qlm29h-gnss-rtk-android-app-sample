@@ -163,14 +163,16 @@ class AppStateTest {
     }
 
     @Test fun clearingConsoleDoesNotResetProtocolStates() {
+        val event = AppCommunicationEvent("2026-08-21T00:00:00Z", "Internet: Online -> Offline")
         val initial = AppState(
-            diagnostics = AppDiagnosticsState(checksumErrors = 2),
+            diagnostics = AppDiagnosticsState(checksumErrors = 2, communicationEvents = listOf(event)),
             usb = AppUsbState(connection = UsbConnectionState.CONNECTED),
             ntrip = AppNtripState(connection = NtripConnectionState.CONNECTED),
         )
         val changed = initial.copy(diagnostics = initial.diagnostics.copy(console = emptyList()))
 
         assertEquals(2, changed.diagnostics.checksumErrors)
+        assertEquals(listOf(event), changed.diagnostics.communicationEvents)
         assertEquals(UsbConnectionState.CONNECTED, changed.usb.connection)
         assertEquals(NtripConnectionState.CONNECTED, changed.ntrip.connection)
     }

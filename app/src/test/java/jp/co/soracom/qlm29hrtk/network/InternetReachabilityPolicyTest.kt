@@ -4,31 +4,52 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class InternetReachabilityPolicyTest {
-    @Test fun noDefaultNetworkIsOffline() {
+    @Test fun noCandidateIsOffline() {
         assertEquals(
             InternetReachability.OFFLINE,
-            InternetReachabilityPolicy.evaluate(false, false, false),
+            InternetReachabilityPolicy.evaluate(emptyList()),
         )
     }
 
-    @Test fun transportWithoutInternetCapabilityIsOffline() {
+    @Test fun validatedVpnWithoutPhysicalUnderlayIsOffline() {
         assertEquals(
             InternetReachability.OFFLINE,
-            InternetReachabilityPolicy.evaluate(true, false, false),
+            InternetReachabilityPolicy.evaluate(
+                listOf(InternetNetworkCandidate(isVpn = true, hasInternetCapability = true, isValidated = true)),
+            ),
         )
     }
 
-    @Test fun internetCapabilityWithoutValidationIsChecking() {
+    @Test fun unvalidatedPhysicalInternetCandidateIsChecking() {
         assertEquals(
             InternetReachability.CHECKING,
-            InternetReachabilityPolicy.evaluate(true, true, false),
+            InternetReachabilityPolicy.evaluate(
+                listOf(
+                    InternetNetworkCandidate(isVpn = true, hasInternetCapability = true, isValidated = true),
+                    InternetNetworkCandidate(isVpn = false, hasInternetCapability = true, isValidated = false),
+                ),
+            ),
         )
     }
 
-    @Test fun validatedInternetCapabilityIsOnline() {
+    @Test fun validatedPhysicalInternetCandidateIsOnline() {
         assertEquals(
             InternetReachability.ONLINE,
-            InternetReachabilityPolicy.evaluate(true, true, true),
+            InternetReachabilityPolicy.evaluate(
+                listOf(
+                    InternetNetworkCandidate(isVpn = true, hasInternetCapability = true, isValidated = true),
+                    InternetNetworkCandidate(isVpn = false, hasInternetCapability = true, isValidated = true),
+                ),
+            ),
+        )
+    }
+
+    @Test fun localOnlyPhysicalCandidateIsOffline() {
+        assertEquals(
+            InternetReachability.OFFLINE,
+            InternetReachabilityPolicy.evaluate(
+                listOf(InternetNetworkCandidate(isVpn = false, hasInternetCapability = false, isValidated = false)),
+            ),
         )
     }
 }

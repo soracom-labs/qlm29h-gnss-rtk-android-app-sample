@@ -9,6 +9,7 @@ import jp.co.soracom.qlm29hrtk.storage.SessionEntity
 import jp.co.soracom.qlm29hrtk.usb.UsbSerialDevice
 import jp.co.soracom.qlm29hrtk.UsbConnectionState
 import jp.co.soracom.qlm29hrtk.NtripConnectionState
+import jp.co.soracom.qlm29hrtk.AppCommunicationEvent
 
 data class DisplaySettingsUiState(val darkTheme: Boolean, val keepScreenOn: Boolean)
 data class SmartphoneSettingsUiState(
@@ -73,6 +74,7 @@ data class DiagnosticsUiState(
     val soracomSuccessCount: Int,
     val soracomFailureCount: Int,
     val sentenceCounts: Map<NmeaType, Long>,
+    val communicationEvents: List<AppCommunicationEvent>,
 )
 
 data class SettingsUiState(
@@ -125,6 +127,7 @@ data class SettingsUiState(
                 state.ntrip.reconnectCount, state.ntrip.consecutiveFailureCount, state.ntrip.nextRetryDelaySeconds,
                 state.soracom.successCount, state.soracom.failureCount,
                 state.diagnostics.sentenceCounts,
+                state.diagnostics.communicationEvents,
             ),
         )
     }
