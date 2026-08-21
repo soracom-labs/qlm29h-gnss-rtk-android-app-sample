@@ -23,6 +23,7 @@
 | `DISPLAY-02` | `mipmap-*/ic_launcher.png` | `assembleDebug`, `lintDebug`、実機ランチャー確認 |
 | `DISPLAY-03` | `MainActivity.AppBottomTabBar`, `drawable/ic_tab_*.xml`, `Qlm29hTheme` | `assembleDebug`, `lintDebug`、Light/Dark theme実機タブ切替確認 |
 | `DISPLAY-04` | `SettingsScreen.SettingsChoiceChip`, `Qlm29hTheme` | `assembleDebug`, `lintDebug`、Light/Dark theme実機選択確認 |
+| `SEC-02` | `AndroidManifest.xml`の`android:allowBackup="false"` | `lintDebug`、インストール済みManifest確認 |
 | Settings境界値 | `settings/SettingsValidator.kt` | `SettingsValidatorTest.kt` |
 | UIとRuntimeの境界 | `MapUiState.kt`, `SettingsUiState.kt`, `MapActions`, `SettingsActions`, `RtkSettingsActions` | `MapUiStateTest.kt`, `SettingsUiStateTest.kt`とコンパイル検証 |
 | Runtime部分状態 | `AppState.kt`内の機能別`App*State`と各更新ヘルパー | `AppStateTest.kt`, `RtkRuntimeIntegrationTest.kt`, `MapUiStateTest.kt`, `SettingsUiStateTest.kt` |

@@ -70,3 +70,4 @@
 - `SEC-01`: 認証情報、Authorizationヘッダー、走行座標を診断ログへ出力しないこと。
 - `NET-01`: Map上部のInternet表示は、アプリ対象のVPNが存在または`VALIDATED`であるだけではOnlineとしないこと。VPNを除くWi-Fi、Cellular、Ethernet等の候補で、Androidが`NET_CAPABILITY_INTERNET`と`NET_CAPABILITY_VALIDATED`を確認した場合だけ緑とすること。基礎回線はあるが未検証の場合は橙、基礎回線がない場合は灰とすること。
 - `NET-02`: Internet状態変化とNTRIP再試行番号・待機秒数を、時刻付きの非機密な診断イベントとして直近20件までメモリ内に保持すること。認証情報、接続先、走行座標、NMEA/RTCM内容を含めないこと。
+- `SEC-02`: 正確な位置履歴、NMEA/RTCM生ログ、NTRIP認証情報を含むアプリ内部データをAndroidのバックアップ対象にしないこと。

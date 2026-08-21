@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/soracom-labs/qlm29h-gnss-rtk-android-app-sample/security/advisories/new
+    about: 脆弱性は公開Issueへ記載せず、非公開で報告してください

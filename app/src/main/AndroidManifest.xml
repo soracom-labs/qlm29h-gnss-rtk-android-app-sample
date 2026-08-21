@@ -13,7 +13,7 @@
     <uses-feature android:name="android.hardware.usb.host" android:required="true" />
     <application
         android:name=".RtkApplication"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="QLM29H RTK"
         android:networkSecurityConfig="@xml/network_security_config"

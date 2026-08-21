@@ -25,6 +25,7 @@
 - `FGS-02`: 位置情報権限なしで`location` Foreground Serviceを開始しない。
 - `FGS-03`: 有効なサービス種別がなければForeground Serviceを終了する。
 - `SEC-01`: NTRIP認証情報、Authorizationヘッダー、正確な走行座標をログへ出さない。
+- `SEC-02`: 測位履歴・生ログ・認証情報をAndroidのバックアップ対象にしない。
 - `DATA-01`: Map表示上限とDB保存上限を同一視しない。
 - `NTRIP-07`: RTCM無受信による段階式再接続は`NtripSessionController`だけが所有し、認証・設定エラーを無限再試行しない。
 - `NET-01`: Internet表示はtransport名やVPNの`VALIDATED`だけで緑にせず、VPNを除く検証済みの基礎回線がある場合だけOnlineとする。

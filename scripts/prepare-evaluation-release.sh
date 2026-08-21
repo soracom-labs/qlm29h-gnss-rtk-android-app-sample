@@ -14,13 +14,14 @@ if [[ -z "${version_name}" ]]; then
 fi
 
 mkdir -p dist
-artifact="dist/qlm29h-rtk-${version_name}-evaluation-debug.apk"
+artifact_name="qlm29h-rtk-${version_name}-evaluation-debug.apk"
+artifact="dist/${artifact_name}"
 cp app/build/outputs/apk/debug/app-debug.apk "${artifact}"
 
 if command -v shasum >/dev/null 2>&1; then
-    shasum -a 256 "${artifact}" > "${artifact}.sha256"
+    (cd dist && shasum -a 256 "${artifact_name}" > "${artifact_name}.sha256")
 elif command -v sha256sum >/dev/null 2>&1; then
-    sha256sum "${artifact}" > "${artifact}.sha256"
+    (cd dist && sha256sum "${artifact_name}" > "${artifact_name}.sha256")
 else
     echo "A SHA-256 command (shasum or sha256sum) is required." >&2
     exit 1
