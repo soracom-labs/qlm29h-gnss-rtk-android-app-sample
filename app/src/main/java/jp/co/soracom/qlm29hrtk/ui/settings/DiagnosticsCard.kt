@@ -20,7 +20,13 @@ fun DiagnosticsCard(state: DiagnosticsUiState) {
             Text("USB RX last: ${state.lastUsbReceivedAt ?: "-"}")
             Text("USB TX last: ${state.lastUsbTransmittedAt ?: "-"}")
             Text("Checksum errors: ${state.checksumErrors} · GGA parse errors: ${state.ggaParseErrors}")
-            Text("NTRIP reconnects: ${state.ntripReconnectCount}")
+            Text(
+                "NTRIP reconnects: ${state.ntripReconnectCount}" +
+                    if (state.ntripConsecutiveFailureCount > 0) {
+                        " · consecutive: ${state.ntripConsecutiveFailureCount}" +
+                            state.ntripNextRetryDelaySeconds?.let { " · next: ${it}s" }.orEmpty()
+                    } else "",
+            )
             Text("SORACOM success: ${state.soracomSuccessCount} · failed: ${state.soracomFailureCount}")
             Text(
                 NmeaType.entries.joinToString(" · ") { "${it.name} ${state.sentenceCounts[it] ?: 0}" },

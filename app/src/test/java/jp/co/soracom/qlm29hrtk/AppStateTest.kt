@@ -28,12 +28,14 @@ class AppStateTest {
 
     @Test fun ntripConnectionStateSeparatesConnectedFromActiveSession() {
         assertFalse(NtripConnectionState.DISCONNECTED.hasActiveSession)
+        assertTrue(NtripConnectionState.WAITING_FOR_GGA.hasActiveSession)
         assertTrue(NtripConnectionState.CONNECTING.hasActiveSession)
         assertTrue(NtripConnectionState.RECONNECTING.hasActiveSession)
         assertTrue(NtripConnectionState.CONNECTED.hasActiveSession)
         assertTrue(NtripConnectionState.CONNECTED.isConnected)
         assertFalse(NtripConnectionState.RECONNECTING.isConnected)
         assertFalse(NtripConnectionState.AUTH_ERROR.hasActiveSession)
+        assertFalse(NtripConnectionState.CONFIGURATION_ERROR.hasActiveSession)
         assertEquals("Auth Error", NtripConnectionState.AUTH_ERROR.label)
     }
 

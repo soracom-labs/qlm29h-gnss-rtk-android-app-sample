@@ -17,7 +17,7 @@
 
 - `MAP-01`: QLM29HをSmartphone GNSSより常に優先して追従する。
 - `MAP-02`: SPだけの更新でQLM追従カメラを動かさない。
-- `MAP-03`: Past session表示中はLiveデータへ自動切替しない。対応関係のないSPも重ねない。
+- `MAP-03`: Past session表示中はLiveデータへ自動切替しない。SPはセッションIDまたは移行前データの時間範囲で対応する点だけを重ねる。
 - `SP-01`: Smartphone GNSSはNTRIP、SORACOM、Consoleへ連携しない。
 - `SP-02`: QLMとSPの軌跡、保存、セグメントを混ぜない。
 - `SP-03`: プロセス再生成後のSmartphone GNSSは必ずDisabledから始める。
@@ -26,6 +26,7 @@
 - `FGS-03`: 有効なサービス種別がなければForeground Serviceを終了する。
 - `SEC-01`: NTRIP認証情報、Authorizationヘッダー、正確な走行座標をログへ出さない。
 - `DATA-01`: Map表示上限とDB保存上限を同一視しない。
+- `NTRIP-07`: RTCM無受信による再接続と指数バックオフは`NtripSessionController`だけが所有し、認証・設定エラーを無限再試行しない。
 
 ## 変更時のルール
 

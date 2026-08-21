@@ -8,9 +8,11 @@ import android.location.LocationManager
 import android.location.LocationRequest
 import jp.co.soracom.qlm29hrtk.storage.SmartphoneTrackDao
 import jp.co.soracom.qlm29hrtk.storage.SmartphoneTrackPointEntity
+import jp.co.soracom.qlm29hrtk.storage.SessionEntity
 import java.util.UUID
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.flow.Flow
 
 fun interface SmartphoneLocationListener { fun onLocation(location: Location) }
 
@@ -50,13 +52,24 @@ class SmartphoneTrackRepository(private val dao: SmartphoneTrackDao) {
     val pointCount = dao.observeCount()
     private var segmentId = UUID.randomUUID().toString()
     private var lastTimestamp = 0L
+    private var lastQlmSessionId: String? = null
     private var maxPoints = TrackRetentionPolicy.DEFAULT_MAX_POINTS
     private var retainedPointCount: Int? = null
     private val mutex = Mutex()
 
-    suspend fun record(location: Location) = mutex.withLock {
+    fun sessionPoints(session: SessionEntity): Flow<List<SmartphoneTrackPointEntity>> =
+        dao.observeSessionRange(
+            sessionId = session.id,
+            startedAt = session.startedAt,
+            endedAt = session.endedAt ?: System.currentTimeMillis(),
+        )
+
+    suspend fun record(location: Location, qlmSessionId: String?) = mutex.withLock {
         val timestamp = location.time.takeIf { it > 0 } ?: System.currentTimeMillis()
-        if (lastTimestamp == 0L || timestamp - lastTimestamp > SEGMENT_GAP_MILLIS) segmentId = UUID.randomUUID().toString()
+        if (lastTimestamp == 0L || timestamp - lastTimestamp > SEGMENT_GAP_MILLIS || qlmSessionId != lastQlmSessionId) {
+            // SP-02/SP-06: never draw a line across a QLM session boundary.
+            segmentId = UUID.randomUUID().toString()
+        }
         dao.insert(
             SmartphoneTrackPointEntity(
                 segmentId = segmentId,
@@ -68,14 +81,19 @@ class SmartphoneTrackRepository(private val dao: SmartphoneTrackDao) {
                 speed = location.speed.takeIf { location.hasSpeed() },
                 bearing = location.bearing.takeIf { location.hasBearing() },
                 provider = location.provider.orEmpty(),
+                qlmSessionId = qlmSessionId,
             ),
         )
         lastTimestamp = timestamp
+        lastQlmSessionId = qlmSessionId
         val count = retainedPointCount?.plus(1) ?: dao.countPoints()
         retainedPointCount = prune(count)
     }
 
-    fun startNewSegment() { lastTimestamp = 0L }
+    fun startNewSegment() {
+        lastTimestamp = 0L
+        lastQlmSessionId = null
+    }
     suspend fun clearAll() = mutex.withLock {
         dao.clearAll()
         retainedPointCount = 0

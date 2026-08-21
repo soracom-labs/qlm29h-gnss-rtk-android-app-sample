@@ -38,6 +38,8 @@ Mapは`MapUiState.from(AppState)`で必要な状態だけを投影し、`MapActi
 
 長寿命Coroutineの所有者も分離している。`UsbSessionController`はUSB受信Job、`NtripSessionController`は単一ストリーム・再接続待機・キャンセル、`SoracomScheduleController`は定期送信タイマーを所有する。`SmartphoneLocationController`はLocationProvider登録を所有し、重複start/stopを防ぐ。`RtkRuntime`は結果を`AppState`へ反映するが、Controller内部のJobや登録状態を直接操作しない。
 
+NTRIPの無受信監視は`NtripClient`が半開きソケットを例外として表面化し、`NtripSessionController`が唯一のJob所有者として指数バックオフ、jitter、ネットワーク復旧時の待機解除を処理する。`RtkRuntime`の10秒監視は表示上のStale判定だけを担当し、別の再接続Jobを起動しない。接続成功だけでは失敗回数を戻さず、30秒のRTCM安定受信を回復境界とする。
+
 ## データフロー
 
 QLMは `USB → SessionRawLogStore → NMEA framing/checksum → GGA parsing → TrackRepository` の順に保存される。同じ最新GGAがNTRIPとSORACOMで利用される。RTCMは `NTRIP → SessionRawLogStore → inspector → USB` であり、内容を改変しない。
@@ -46,12 +48,12 @@ QLMは `USB → SessionRawLogStore → NMEA framing/checksum → GGA parsing →
 
 TrackPointの保存上限は`AppStorageState`とDataStoreへ保持し、QLMとSPの各Repositoryへ同じ選択値を独立に適用する。保持は件数だけで制御し、経過日数では削除しない。上限変更時の即時trimと新規保存時のtrimはRepositoryが担当し、生NMEA/RTCMログには適用しない。
 
-SPは `Android GPS Provider → AppSmartphoneState / SmartphoneTrackRepository → SP Map layer` の閉じた経路である。QLM経路へ合流させてはならない（`SP-01`, `SP-02`）。
+SPは `Android GPS Provider → AppSmartphoneState / SmartphoneTrackRepository → SP Map layer` の閉じた経路である。保存時に現在のQLMセッションIDを表示上の対応情報として持てるが、測位値はQLM経路へ合流させてはならない（`SP-01`, `SP-02`, `SP-06`）。
 
 ## Mapの表示モデル
 
 - Live: `AppTrackingState.livePoints`と最新SP集合。
-- Past session: `AppTrackingState.selectedSessionPoints`の全点。SPは非表示。
+- Past session: `AppTrackingState.selectedSessionPoints`の全点と、同一セッションへ関連付けた`AppSmartphoneState.selectedSessionPoints`。移行前のSP点だけはセッション時間範囲で照合する。
 - Viewport判断は`MapViewportPolicy`へ集約し、MapLibreなしで試験する。
 - レイヤー再描画キャッシュは`MapRenderState`が保持する。
 

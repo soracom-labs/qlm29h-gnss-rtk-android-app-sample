@@ -48,6 +48,8 @@ class SettingsUiStateTest {
         assertFalse(result.usb.autoConnect)
         assertEquals("caster.example", result.ntrip.host)
         assertEquals("Reconnecting", result.ntrip.connection)
+        assertTrue(result.ntrip.activeSession)
+        assertTrue(result.ntrip.busy)
         assertTrue(result.soracom.enabled)
         assertEquals("Success", result.soracom.status)
         assertEquals(34, result.storage.qlmPointCount)
@@ -63,7 +65,7 @@ class SettingsUiStateTest {
                     ggaParseErrors = 3,
                     sentenceCounts = mapOf(NmeaType.GGA to 7L),
                 ),
-                ntrip = AppNtripState(reconnectCount = 4),
+                ntrip = AppNtripState(reconnectCount = 4, consecutiveFailureCount = 2, nextRetryDelaySeconds = 4),
                 soracom = AppSoracomState(successCount = 5, failureCount = 6),
             ),
         )
@@ -71,6 +73,8 @@ class SettingsUiStateTest {
         assertEquals(2, result.diagnostics.checksumErrors)
         assertEquals(3, result.diagnostics.ggaParseErrors)
         assertEquals(4, result.diagnostics.ntripReconnectCount)
+        assertEquals(2, result.diagnostics.ntripConsecutiveFailureCount)
+        assertEquals(4L, result.diagnostics.ntripNextRetryDelaySeconds)
         assertEquals(5, result.diagnostics.soracomSuccessCount)
         assertEquals(6, result.diagnostics.soracomFailureCount)
         assertEquals(7L, result.diagnostics.sentenceCounts[NmeaType.GGA])

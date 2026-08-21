@@ -34,8 +34,8 @@ class RtkForegroundService : Service() {
     private val connectivityManager get() = getSystemService(ConnectivityManager::class.java)
     private val usbManager get() = getSystemService(UsbManager::class.java)
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
-        override fun onAvailable(network: Network) = runtime.onNetworkChanged()
-        override fun onLost(network: Network) = runtime.onNetworkChanged()
+        override fun onAvailable(network: Network) = runtime.onNetworkAvailable()
+        override fun onLost(network: Network) = runtime.onNetworkLost()
     }
     private val usbReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {

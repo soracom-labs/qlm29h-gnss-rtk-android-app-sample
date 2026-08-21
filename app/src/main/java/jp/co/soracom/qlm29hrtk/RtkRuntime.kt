@@ -39,6 +39,8 @@ import jp.co.soracom.qlm29hrtk.settings.SettingsValidationResult
 import jp.co.soracom.qlm29hrtk.location.TrackRepository
 import jp.co.soracom.qlm29hrtk.location.TrackRetentionPolicy
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 import jp.co.soracom.qlm29hrtk.storage.TrackPointEntity
 import jp.co.soracom.qlm29hrtk.storage.SessionEntity
 import jp.co.soracom.qlm29hrtk.storage.SmartphoneTrackPointEntity
@@ -222,6 +224,9 @@ class RtkRuntime(
                 deviceId = deviceId,
                 onBytes = ::acceptSerial,
                 beforeRead = {
+                    // NTRIP-07: do not let a fix retained for the Last fix UI
+                    // satisfy the next USB session's valid-GGA gate.
+                    updateTrackingState { copy(latestFix = null) }
                     val sessionId = trackRepository?.startSession()
                     if (sessionId != null) sessionRawLogStore?.startSession(sessionId)
                 },
@@ -389,7 +394,14 @@ class RtkRuntime(
                         ),
                         notice = AppNoticeState(null),
                     )
-                    runtimeScope.launch { runCatching { smartphoneTrackRepository?.record(location) }.onFailure { mutableState.value = mutableState.value.copy(notice = AppNoticeState("Unable to save smartphone location")) } }
+                    runtimeScope.launch {
+                        runCatching {
+                            // SP-06 associates only storage/display metadata;
+                            // the phone fix remains excluded from NTRIP,
+                            // SORACOM and Console by SP-01.
+                            smartphoneTrackRepository?.record(location, trackRepository?.activeSessionId())
+                        }.onFailure { mutableState.value = mutableState.value.copy(notice = AppNoticeState("Unable to save smartphone location")) }
+                    }
                 }
             .onSuccess {
                 if (decision.requiresForegroundService) foregroundController?.start()
@@ -460,6 +472,8 @@ class RtkRuntime(
             mutableState.value = current.copy(ntrip = current.ntrip.copy(connection = NtripConnectionState.ERROR), notice = AppNoticeState(it.message))
             return
         }
+        lastRtcmAtMillis = null
+        updateNtripState { copy(rtcmState = RtcmStreamState.NONE, nextRetryDelaySeconds = null) }
         ntripController.connect(
             config = config,
             latestGga = { mutableState.value.tracking.latestFix?.raw },
@@ -468,11 +482,13 @@ class RtkRuntime(
         )
     }
 
-    fun onNetworkChanged() {
+    fun onNetworkAvailable() {
         updateSoracomState { copy(networkType = networkTypeProvider.current()) }
-        if (mutableState.value.usb.connection == UsbConnectionState.CONNECTED && mutableState.value.ntrip.connection.hasActiveSession) {
-            connectNtrip()
-        }
+        ntripController.onNetworkAvailable()
+    }
+
+    fun onNetworkLost() {
+        updateSoracomState { copy(networkType = networkTypeProvider.current()) }
     }
 
     fun fetchSourceTable() {
@@ -557,24 +573,37 @@ class RtkRuntime(
 
     fun disconnectNtrip() {
         ntripController.disconnect()
-        updateNtripState { copy(connection = NtripConnectionState.DISCONNECTED) }
+        lastRtcmAtMillis = null
+        updateNtripState {
+            copy(
+                connection = NtripConnectionState.DISCONNECTED,
+                rtcmState = RtcmStreamState.NONE,
+                consecutiveFailureCount = 0,
+                nextRetryDelaySeconds = null,
+            )
+        }
     }
 
     private fun onNtripSessionEvent(event: NtripSessionEvent) {
         val current = mutableState.value
         mutableState.value = when (event) {
-            NtripSessionEvent.Connecting -> current.copy(ntrip = current.ntrip.copy(connection = NtripConnectionState.CONNECTING), notice = AppNoticeState())
-            NtripSessionEvent.Connected -> current.copy(ntrip = current.ntrip.copy(connection = NtripConnectionState.CONNECTED), notice = AppNoticeState())
+            NtripSessionEvent.Connecting -> current.copy(ntrip = current.ntrip.copy(connection = NtripConnectionState.CONNECTING, nextRetryDelaySeconds = null), notice = AppNoticeState())
+            NtripSessionEvent.WaitingForGga -> current.copy(ntrip = current.ntrip.copy(connection = NtripConnectionState.WAITING_FOR_GGA, rtcmState = RtcmStreamState.NONE), notice = AppNoticeState())
+            NtripSessionEvent.Connected -> current.copy(ntrip = current.ntrip.copy(connection = NtripConnectionState.CONNECTED, nextRetryDelaySeconds = null), notice = AppNoticeState())
+            NtripSessionEvent.Stable -> current.copy(ntrip = current.ntrip.copy(consecutiveFailureCount = 0, nextRetryDelaySeconds = null), notice = AppNoticeState())
             NtripSessionEvent.Disconnected -> current.copy(ntrip = current.ntrip.copy(connection = NtripConnectionState.DISCONNECTED, rtcmState = RtcmStreamState.NONE))
             is NtripSessionEvent.AuthError -> current.copy(ntrip = current.ntrip.copy(connection = NtripConnectionState.AUTH_ERROR), notice = AppNoticeState(event.message))
             is NtripSessionEvent.TlsError -> current.copy(ntrip = current.ntrip.copy(connection = NtripConnectionState.TLS_ERROR), notice = AppNoticeState(event.message))
+            is NtripSessionEvent.ConfigurationError -> current.copy(ntrip = current.ntrip.copy(connection = NtripConnectionState.CONFIGURATION_ERROR), notice = AppNoticeState(event.message))
             is NtripSessionEvent.Reconnecting -> current.copy(
                 ntrip = current.ntrip.copy(
                     connection = NtripConnectionState.RECONNECTING,
                     rtcmState = RtcmStreamState.STALE,
                     reconnectCount = current.ntrip.reconnectCount + 1,
+                    consecutiveFailureCount = event.attempt,
+                    nextRetryDelaySeconds = (event.delayMillis + 999) / 1_000,
                 ),
-                notice = AppNoticeState(event.message),
+                notice = AppNoticeState(),
             )
         }
     }
@@ -745,13 +774,24 @@ class RtkRuntime(
         mapSessionJob = null
         if (sessionId == null) {
             updateTrackingState { copy(selectedSessionId = null, selectedSessionPoints = emptyList(), follow = true) }
+            updateSmartphoneState { copy(selectedSessionPoints = emptyList(), selectedSessionPointsLoaded = false) }
+            return
+        }
+        val session = mutableState.value.tracking.sessions.firstOrNull { it.id == sessionId }
+        if (session == null) {
+            mutableState.value = mutableState.value.copy(notice = AppNoticeState("Session not found"))
             return
         }
         updateTrackingState { copy(selectedSessionId = sessionId, selectedSessionPoints = emptyList(), follow = true) }
+        updateSmartphoneState { copy(selectedSessionPoints = emptyList(), selectedSessionPointsLoaded = false) }
         mapSessionJob = runtimeScope.launch {
-            trackRepository?.sessionPoints(sessionId)?.collectLatest { points ->
+            val qlmPoints = trackRepository?.sessionPoints(sessionId) ?: flowOf(emptyList())
+            val smartphonePoints = smartphoneTrackRepository?.sessionPoints(session) ?: flowOf(emptyList())
+            combine(qlmPoints, smartphonePoints) { qlm, smartphone -> qlm to smartphone }
+                .collectLatest { (points, spPoints) ->
                 if (mutableState.value.tracking.selectedSessionId == sessionId) {
                     updateTrackingState { copy(selectedSessionPoints = points) }
+                    updateSmartphoneState { copy(selectedSessionPoints = spPoints, selectedSessionPointsLoaded = true) }
                 }
             }
         }

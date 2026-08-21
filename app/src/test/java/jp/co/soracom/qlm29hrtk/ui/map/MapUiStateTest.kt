@@ -24,8 +24,9 @@ class MapUiStateTest {
         assertFalse(result.showingPastSession)
     }
 
-    @Test fun pastProjectionUsesTheSelectedQlmSessionAndSuppressesSmartphoneTrack() {
+    @Test fun pastProjectionUsesOnlyTheSelectedQlmAndAssociatedSmartphoneTracks() {
         val past = qlmPoint(3)
+        val historicalSp = smartphonePoint(4)
         val result = MapUiState.from(
             AppState(
                 tracking = AppTrackingState(
@@ -33,14 +34,19 @@ class MapUiStateTest {
                     selectedSessionId = "past",
                     selectedSessionPoints = listOf(past),
                 ),
-                smartphone = AppSmartphoneState(points = listOf(smartphonePoint(2))),
+                smartphone = AppSmartphoneState(
+                    points = listOf(smartphonePoint(2)),
+                    selectedSessionPoints = listOf(historicalSp),
+                    selectedSessionPointsLoaded = true,
+                ),
             ),
         )
 
         assertEquals(listOf(past), result.points)
-        assertTrue(result.smartphonePoints.isEmpty())
-        assertFalse(result.smartphoneVisible)
+        assertEquals(listOf(historicalSp), result.smartphonePoints)
+        assertTrue(result.smartphoneVisible)
         assertTrue(result.showingPastSession)
+        assertEquals("SP 1 points", result.historicalSmartphoneStatus)
     }
 
     private fun qlmPoint(id: Long) = TrackPointEntity(

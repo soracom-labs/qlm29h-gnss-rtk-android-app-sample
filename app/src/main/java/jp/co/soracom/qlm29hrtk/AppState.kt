@@ -47,16 +47,18 @@ data class AppUsbState(
 
 enum class NtripConnectionState(val label: String) {
     DISCONNECTED("Disconnected"),
+    WAITING_FOR_GGA("Waiting for GGA"),
     CONNECTING("Connecting"),
     CONNECTED("Connected"),
     RECONNECTING("Reconnecting"),
     AUTH_ERROR("Auth Error"),
     TLS_ERROR("TLS Error"),
+    CONFIGURATION_ERROR("Config Error"),
     ERROR("Error"),
     ;
 
     val isConnected: Boolean get() = this == CONNECTED
-    val hasActiveSession: Boolean get() = this == CONNECTING || this == CONNECTED || this == RECONNECTING
+    val hasActiveSession: Boolean get() = this == WAITING_FOR_GGA || this == CONNECTING || this == CONNECTED || this == RECONNECTING
 }
 
 enum class RtcmStreamState(val label: String) {
@@ -95,6 +97,8 @@ data class AppNtripState(
     val sourceTableState: SourceTableStatus = SourceTableStatus.Idle,
     val settingsState: SettingsPersistenceState = SettingsPersistenceState.IDLE,
     val reconnectCount: Int = 0,
+    val consecutiveFailureCount: Int = 0,
+    val nextRetryDelaySeconds: Long? = null,
 )
 
 enum class SoracomPublicationState(val label: String) {
@@ -142,6 +146,8 @@ data class AppSmartphoneState(
     val trackVisible: Boolean = true,
     val status: SmartphoneGnssStatus = SmartphoneGnssStatus.DISABLED,
     val points: List<SmartphoneTrackPointEntity> = emptyList(),
+    val selectedSessionPoints: List<SmartphoneTrackPointEntity> = emptyList(),
+    val selectedSessionPointsLoaded: Boolean = false,
     val pointCount: Int = 0,
     val lastLocationAt: String? = null,
     val accuracy: Float? = null,

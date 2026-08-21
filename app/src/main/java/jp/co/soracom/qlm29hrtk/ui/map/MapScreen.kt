@@ -43,7 +43,10 @@ fun MapScreen(state: MapUiState, actions: MapActions) {
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("Past session · ${state.points.size} points", style = MaterialTheme.typography.labelMedium)
+                        Text(
+                            "Past session · ${state.points.size} points · ${state.historicalSmartphoneStatus.orEmpty()}",
+                            style = MaterialTheme.typography.labelMedium,
+                        )
                         TextButton(onClick = actions.onReturnToLive) { Text("Return to live") }
                     }
                 }
@@ -88,11 +91,11 @@ fun MapScreen(state: MapUiState, actions: MapActions) {
 
 @Composable
 private fun StatusPill(label: String, value: String, connected: Boolean) {
-    val transitional = value in setOf("Connecting", "Reconnecting", "Sending", "Waiting")
+    val transitional = value in setOf("Connecting", "Reconnecting", "Sending", "Waiting", "Waiting for GGA")
     val color = when {
         connected -> Color(0xFF2E7D32)
         transitional -> Color(0xFFF9A825)
-        value in setOf("Error", "Auth Error", "TLS Error") -> Color(0xFFC62828)
+        value in setOf("Error", "Auth Error", "TLS Error", "Config Error") -> Color(0xFFC62828)
         else -> Color(0xFF616161)
     }
     Surface(color = color.copy(alpha = 0.88f), contentColor = Color.White, shape = MaterialTheme.shapes.small) {

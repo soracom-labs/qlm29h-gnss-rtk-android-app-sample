@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Entity(
     tableName = "smartphone_track_points",
-    indices = [Index("timestamp"), Index("segmentId")],
+    indices = [Index("timestamp"), Index("segmentId"), Index("qlmSessionId")],
 )
 data class SmartphoneTrackPointEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -23,6 +23,8 @@ data class SmartphoneTrackPointEntity(
     val speed: Float?,
     val bearing: Float?,
     val provider: String,
+    /** SP-06: nullable because SP can run without a USB/QLM session. */
+    val qlmSessionId: String? = null,
 )
 
 @Dao
@@ -30,6 +32,17 @@ interface SmartphoneTrackDao {
     @Insert suspend fun insert(point: SmartphoneTrackPointEntity)
     @Query("SELECT * FROM smartphone_track_points ORDER BY timestamp DESC LIMIT :limit")
     fun observeLatest(limit: Int): Flow<List<SmartphoneTrackPointEntity>>
+    @Query(
+        """SELECT * FROM smartphone_track_points
+            WHERE qlmSessionId = :sessionId
+               OR (qlmSessionId IS NULL AND timestamp BETWEEN :startedAt AND :endedAt)
+            ORDER BY timestamp DESC, id DESC""",
+    )
+    fun observeSessionRange(
+        sessionId: String,
+        startedAt: Long,
+        endedAt: Long,
+    ): Flow<List<SmartphoneTrackPointEntity>>
     @Query("SELECT COUNT(*) FROM smartphone_track_points")
     fun observeCount(): Flow<Int>
     @Query("SELECT COUNT(*) FROM smartphone_track_points")

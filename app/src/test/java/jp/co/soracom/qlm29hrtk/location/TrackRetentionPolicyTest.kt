@@ -6,6 +6,14 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TrackRetentionPolicyTest {
+    @Test fun samplingUsesGgaUtcSecondInsteadOfArrivalJitter() {
+        assertEquals("123519", TrackSamplingPolicy.utcSecond("123519.80"))
+        assertTrue(TrackSamplingPolicy.shouldStore("123518", "123519", 820))
+        assertFalse(TrackSamplingPolicy.shouldStore("123519", "123519", 1_200))
+        assertFalse(TrackSamplingPolicy.shouldStore(null, null, 999))
+        assertTrue(TrackSamplingPolicy.shouldStore(null, null, 1_000))
+    }
+
     @Test fun exposesOnlyDocumentedPointLimits() {
         assertEquals(listOf(50_000, 100_000, 300_000), TrackRetentionPolicy.ALLOWED_MAX_POINTS)
         TrackRetentionPolicy.ALLOWED_MAX_POINTS.forEach { assertTrue(TrackRetentionPolicy.isAllowed(it)) }

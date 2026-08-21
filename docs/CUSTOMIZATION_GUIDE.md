@@ -26,6 +26,8 @@
 - Smartphone GNSS: NTRIP/SORACOM/Consoleの入力へ流さない。
 - セッション: LiveとPast sessionを混在させない。
 - NTRIP: RTCMバイト列を整形、文字列化、再エンコードしない。
+- NTRIP再接続: `NtripSessionController`以外から再接続Jobを起動しない。待機値を変更する場合はStale表示、無受信切断、安定受信によるリセットを別の閾値として検討する。
+- 過去SP表示: QLMセッションIDまたは移行前データの時間範囲で対応を確認し、最新SP集合をそのまま重ねない。
 - 認証情報: DataStoreへ平文保存せず、ログにも出さない。
 
 ## 地図サービスを変更する場合
