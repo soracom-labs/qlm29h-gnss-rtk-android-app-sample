@@ -23,8 +23,8 @@ APKやAABはGit履歴へコミットせず、Releaseの添付ファイルとし�
 生成物の例:
 
 ```text
-dist/qlm29h-rtk-0.1.0-evaluation-debug.apk
-dist/qlm29h-rtk-0.1.0-evaluation-debug.apk.sha256
+dist/qlm29h-rtk-0.2.0-evaluation-debug.apk
+dist/qlm29h-rtk-0.2.0-evaluation-debug.apk.sha256
 ```
 
 デバッグ鍵はビルド環境ごとに異なる場合がある。同じApplication IDでも異なる鍵で署名したAPKへは上書き更新できないため、継続評価では同じビルド環境を使用する。鍵が変わった場合は、端末内データを必要に応じてエクスポートしたうえで旧アプリをアンインストールする。
@@ -66,8 +66,8 @@ shasum -a 256 app/build/outputs/apk/release/app-release.apk
 公開候補は次の名前で`dist/`へ生成される。
 
 ```text
-dist/qlm29h-rtk-0.1.0-sample-release.apk
-dist/qlm29h-rtk-0.1.0-sample-release.apk.sha256
+dist/qlm29h-rtk-0.2.0-sample-release.apk
+dist/qlm29h-rtk-0.2.0-sample-release.apk.sha256
 ```
 
 チェックサム内の対象名は`dist/`を含まないため、GitHub Releasesから2ファイルを同じフォルダーへダウンロードして検証できる。
