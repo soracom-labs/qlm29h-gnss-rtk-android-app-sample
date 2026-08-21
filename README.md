@@ -70,9 +70,9 @@ SORACOM Arcを使用する場合は、SORACOMの公式手順に従ってAndroid�
 
 ## APKの入手と確認
 
-公開サンプルAPKは[GitHub Releases](https://github.com/soracom-labs/qlm29h-gnss-rtk-android-app-sample/releases)からダウンロードできます。最新のReleaseまたはPre-releaseを開き、Release Notesに記載された確認済み環境、既知の制約、署名区分を確認してください。
+評価用サンプルAPKは[GitHub Releases](https://github.com/soracom-labs/qlm29h-gnss-rtk-android-app-sample/releases)からダウンロードできます。最新のPre-releaseを開き、Release Notesに記載された確認済み環境、既知の制約、署名区分を確認してください。
 
-現在の`v0.1.0 Evaluation 1`は初期評価用のデバッグ署名APKです。今後の公開サンプル版は、組織管理のリリース鍵で署名したAPKへ切り替える予定です。署名が異なるAPKは上書き更新できないため、切り替え時には必要なセッションログを先にエクスポートし、既存アプリをアンインストールしてから導入してください。
+現在の`v0.2.0 Evaluation 1`は、GitHubでの検証・カスタマイズ用途に限定したデバッグ署名APKです。正式版またはGoogle Play向けのビルドではありません。同じデバッグ鍵で署名された旧評価版には上書きできますが、別の環境で生成したデバッグ鍵や将来の異なる署名鍵では上書きできません。更新前に必要なセッションログをエクスポートしてください。
 
 Releaseの`Assets`から、次の2ファイルを同じフォルダーへダウンロードします。
 
@@ -84,14 +84,14 @@ APKはソースコードのGit履歴には含めていません。ダウンロ�
 macOSまたはLinuxでの確認例:
 
 ```sh
-shasum -a 256 -c qlm29h-rtk-0.1.0-evaluation.1-debug.apk.sha256
+shasum -a 256 -c qlm29h-rtk-0.2.0-evaluation-debug.apk.sha256
 ```
 
 Windows PowerShellでの確認例:
 
 ```powershell
-Get-FileHash .\qlm29h-rtk-0.1.0-evaluation.1-debug.apk -Algorithm SHA256
-Get-Content .\qlm29h-rtk-0.1.0-evaluation.1-debug.apk.sha256
+Get-FileHash .\qlm29h-rtk-0.2.0-evaluation-debug.apk -Algorithm SHA256
+Get-Content .\qlm29h-rtk-0.2.0-evaluation-debug.apk.sha256
 ```
 
 PowerShellでは、`Get-FileHash`の`Hash`と`.sha256`ファイル先頭の値が一致することを確認してください。APKの端末への導入方法は、後述の「Android端末の初期設定」を参照してください。
@@ -127,7 +127,7 @@ adb install -r app-debug.apk
 
 配布元と署名を信頼できるAPKだけを使用してください。端末のファイル管理アプリやブラウザーから導入する場合、そのアプリに対して一時的に「不明なアプリのインストール」を許可する必要があります。インストール後は許可を戻し、Google Play Protectは有効なままにすることを推奨します。[Google Play Protectの説明](https://support.google.com/android/answer/2812853)
 
-Release Notesに`debug-signed evaluation build`と記載されたAPKは初期評価用です。継続利用する公開サンプル版には、組織管理のリリース鍵、バージョン管理および配布元の明示が必要です。
+Release Notesに`debug-signed evaluation build`と記載されたAPKは評価・検証専用です。アプリはデバッグ可能な状態であり、正式配布、Google Play公開または本番運用を意図していません。更新には同じ署名鍵が必要なため、Release Notesで署名区分を確認してください。
 
 ## 初回利用の流れ
 
