@@ -1,0 +1,75 @@
+name: Bug report
+description: 再現可能な不具合を報告します
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        認証情報、秘密鍵、Authorizationヘッダー、正確な住所・座標、未加工の走行ログを記載しないでください。脆弱性は公開IssueではなくSECURITY.mdの非公開窓口へ報告してください。
+  - type: input
+    id: app-version
+    attributes:
+      label: アプリバージョン
+      description: GitHub Release名またはversionName
+    validations:
+      required: true
+  - type: input
+    id: android-device
+    attributes:
+      label: Android端末
+      description: 端末名とAndroidバージョン
+    validations:
+      required: true
+  - type: input
+    id: gnss-device
+    attributes:
+      label: GNSS機器
+      description: モジュール名と、分かる場合はファームウェアバージョン
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: 発生箇所
+      options:
+        - USB
+        - NTRIP / RTCM
+        - Map
+        - Console / Log export
+        - Smartphone GNSS
+        - SORACOM Unified Endpoint
+        - Install / Update
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 再現手順
+      description: 安全な場所で行った操作を、位置を特定できない形で記載してください
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期待する結果
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 実際の結果
+    validations:
+      required: true
+  - type: textarea
+    id: sanitized-evidence
+    attributes:
+      label: 匿名化済みの補足情報
+      description: 認証情報と正確な位置を除去した短いログや画面情報だけを記載してください
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: データ確認
+      options:
+        - label: 認証情報、秘密鍵、正確な位置、未加工の走行ログを含めていません
+          required: true

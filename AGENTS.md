@@ -25,6 +25,7 @@
 - `FGS-02`: 位置情報権限なしで`location` Foreground Serviceを開始しない。
 - `FGS-03`: 有効なサービス種別がなければForeground Serviceを終了する。
 - `SEC-01`: NTRIP認証情報、Authorizationヘッダー、正確な走行座標をログへ出さない。
+- `SEC-02`: 測位履歴・生ログ・認証情報をAndroidのバックアップ対象にしない。
 - `DATA-01`: Map表示上限とDB保存上限を同一視しない。
 
 ## 変更時のルール
